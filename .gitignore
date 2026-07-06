@@ -1,0 +1,73 @@
+# ====================================================================
+# PowerTwin - Unity .gitignore
+# Optimized for Unity 2022.3 LTS + URP + Windows Desktop
+# ====================================================================
+
+# --- Unity generated (do not version) ---
+[Bb]uild/
+[Ll]ibrary/
+[Ll]ocal[Cc]ache/
+[Tt]emp/
+[Oo]bj/
+*.pidb
+*.unitypackage
+*.app
+
+# --- OS generated ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# --- IDE ---
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.orig
+
+# --- Rider ---
+.idea/
+*.sln.iml
+
+# --- VS Code (keep workspace if shared) ---
+# .vscode/settings.json   <-- uncomment to track shared settings
+.vscode/
+
+# --- JetBrains ---
+*.DotSettings.user
+
+# --- Windows ---
+*.~
+
+# --- Logs ---
+Logs/
+*.log
+
+# --- Memory captures ---
+*.mprof
+
+# --- Asset meta conflicts (rare but avoid) ---
+# All .meta files SHOULD be tracked. Do not add *.meta here.
+
+# --- Crash reports ---
+Crashlytics/
+CrashReports/
+
+# --- Package manager ---
+Packages/
+# But the manifest is needed to restore packages:
+!Packages/manifest.json
+!Packages/packages-lock.json
+
+# --- User-specific project settings ---
+UserSettings/
