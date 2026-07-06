@@ -1,4 +1,4 @@
-# PowerTwin 项目初始化 Checklist
+# LiftingTwin 项目初始化 Checklist
 
 ## 一、工程结构
 
@@ -10,7 +10,7 @@
 - [ ] **在 Unity Editor 中创建 Main Scene** → `Assets/_Scenes/MainScene.unity`
 - [ ] **创建 Bootstrap GameObject**，挂载 `AppBootstrap.cs`，引用 `AppConfig.asset`
 - [ ] **创建 AppConfig 资产** → `Assets/_Config/AppConfig.asset`
-  - Unity 菜单：`Assets > Create > PowerTwin > App Config`
+  - Unity 菜单：`Assets > Create > LiftingTwin > App Config`
   - 拖放到 `Assets/_Config/` 目录
 
 ## 二、Project Settings（详见下方说明）
@@ -28,9 +28,9 @@
   - 通过 AppConfig 配置（`Application.targetFrameRate`）
 - [ ] **Quality Settings** — 使用 URP-HighFidelity 作为默认
   - Edit > Project Settings > Quality
-- [ ] **Company Name → PowerTwin Team**
+- [ ] **Company Name → LiftingTwin Team**
   - Edit > Project Settings > Player > Company Name
-- [ ] **Product Name → PowerTwin**
+- [ ] **Product Name → LiftingTwin**
   - Edit > Project Settings > Player > Product Name
 - [ ] **Default Window Size → 1920×1080**
   - Edit > Project Settings > Player > Resolution

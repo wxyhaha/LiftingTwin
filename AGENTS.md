@@ -1,4 +1,4 @@
-# AGENTS.md — PowerTwin AI 开发规范
+# AGENTS.md — LiftingTwin AI 开发规范
 
 > **这是项目唯一的 AI 开发规范文件。**
 >
@@ -10,7 +10,7 @@
 
 ## 1. 项目定位
 
-PowerTwin 是一个**数字孪生桌面应用**，**不是游戏**。
+LiftingTwin 是一个**数字孪生桌面应用**，**不是游戏**。
 
 - 负责：桌面端三维可视化渲染
 - 不负责：任何算法（算法由外部团队提供）
@@ -56,7 +56,7 @@ PowerTwin 是一个**数字孪生桌面应用**，**不是游戏**。
 
 | 类型 | 规范 | 示例 |
 |------|------|------|
-| 命名空间 | PascalCase | `PowerTwin.Network` |
+| 命名空间 | PascalCase | `LiftingTwin.Network` |
 | 类 / 结构体 | PascalCase | `PointCloudRenderer` |
 | 接口 | `I` + PascalCase | `IDataReceiver` |
 | 枚举 | PascalCase | `LogLevel` |
@@ -186,13 +186,13 @@ public class PointCloudManager : MonoBehaviour
 
 | 模块 | 命名空间 | 职责 |
 |------|---------|------|
-| Core | `PowerTwin.Core` | 应用入口、生命周期、全局配置 |
-| Runtime | `PowerTwin.Runtime` | 主循环、帧同步、数据调度 |
-| Mesh | `PowerTwin.Mesh` | Mesh 数据结构与动态更新渲染 |
-| PointCloud | `PowerTwin.PointCloud` | 点云数据结构与渲染 |
-| Network | `PowerTwin.Network` | WebSocket / TCP 客户端与数据协议 |
-| Visualization | `PowerTwin.Visualization` | 相机控制、渲染辅助、后处理 |
-| Utils | `PowerTwin.Utils` | 通用工具（日志、数学、扩展方法） |
+| Core | `LiftingTwin.Core` | 应用入口、生命周期、全局配置 |
+| Runtime | `LiftingTwin.Runtime` | 主循环、帧同步、数据调度 |
+| Mesh | `LiftingTwin.Mesh` | Mesh 数据结构与动态更新渲染 |
+| PointCloud | `LiftingTwin.PointCloud` | 点云数据结构与渲染 |
+| Network | `LiftingTwin.Network` | WebSocket / TCP 客户端与数据协议 |
+| Visualization | `LiftingTwin.Visualization` | 相机控制、渲染辅助、后处理 |
+| Utils | `LiftingTwin.Utils` | 通用工具（日志、数学、扩展方法） |
 
 ### 6.1 模块间依赖
 
@@ -210,7 +210,7 @@ Runtime → Core + Network + Mesh + PointCloud + Visualization（调度层）
 
 ## 7. 日志规范
 
-### 7.1 统一使用 `PowerTwin.Utils.Log`
+### 7.1 统一使用 `LiftingTwin.Utils.Log`
 
 ```csharp
 // ✅ 正确

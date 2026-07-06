@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// PowerTwin - Simple Structured Logger
+// LiftingTwin - Simple Structured Logger
 //
 // Design principles:
 //   - Never use Debug.Log directly in business code.
@@ -18,7 +18,7 @@
 using System;
 using UnityEngine;
 
-namespace PowerTwin.Utils
+namespace LiftingTwin.Utils
 {
     public enum LogLevel
     {

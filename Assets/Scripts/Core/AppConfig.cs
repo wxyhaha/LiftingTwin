@@ -1,9 +1,9 @@
 // -----------------------------------------------------------------------
-// PowerTwin - Application Configuration (ScriptableObject)
+// LiftingTwin - Application Configuration (ScriptableObject)
 //
 // Purpose:
 //   Central, inspector-editable configuration asset for the application.
-//   Create one instance via: Assets > Create > PowerTwin > AppConfig
+//   Create one instance via: Assets > Create > LiftingTwin > AppConfig
 //   and place it under Assets/_Config/.
 //
 // Design:
@@ -14,13 +14,13 @@
 
 using UnityEngine;
 
-namespace PowerTwin.Core
+namespace LiftingTwin.Core
 {
     /// <summary>
-    /// Root configuration asset for the PowerTwin application.
+    /// Root configuration asset for the LiftingTwin application.
     /// Create via the Create Asset menu and reference from AppBootstrap.
     /// </summary>
-    [CreateAssetMenu(fileName = "AppConfig", menuName = "PowerTwin/App Config", order = 1)]
+    [CreateAssetMenu(fileName = "AppConfig", menuName = "LiftingTwin/App Config", order = 1)]
     public class AppConfig : ScriptableObject
     {
         [Header("Application")]

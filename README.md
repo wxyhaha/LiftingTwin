@@ -1,10 +1,10 @@
-# PowerTwin
+# LiftingTwin
 
 输变电工程吊装作业三维动态安全管控验证平台
 
 ## 项目简介
 
-PowerTwin 是一个面向输变电工程吊装作业的数字孪生三维可视化验证平台。
+LiftingTwin 是一个面向输变电工程吊装作业的数字孪生三维可视化验证平台。
 
 Unity 端仅负责**桌面端三维可视化渲染**，不负责任何算法。
 
@@ -154,4 +154,4 @@ chore: Initialize project directory structure
 
 ---
 
-> **PowerTwin** — 简单、模块化、可维护的数字孪生平台。
+> **LiftingTwin** — 简单、模块化、可维护的数字孪生平台。

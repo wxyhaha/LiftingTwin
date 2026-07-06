@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// PowerTwin - Application Bootstrap
+// LiftingTwin - Application Bootstrap
 //
 // Purpose:
 //   Minimal entry point MonoBehaviour. Attach to a GameObject in the
@@ -13,10 +13,10 @@
 //   Place it on a "Bootstrap" GameObject in the main scene.
 // -----------------------------------------------------------------------
 
-using PowerTwin.Utils;
+using LiftingTwin.Utils;
 using UnityEngine;
 
-namespace PowerTwin.Core
+namespace LiftingTwin.Core
 {
     /// <summary>
     /// Application entry point. Initializes core services on Awake.
@@ -43,7 +43,7 @@ namespace PowerTwin.Core
         {
             // Logging
             Log.MinLevel = cfg.minLogLevel;
-            Log.Info("Bootstrap", "PowerTwin starting. LogLevel={0}", Log.MinLevel);
+            Log.Info("Bootstrap", "LiftingTwin starting. LogLevel={0}", Log.MinLevel);
 
             // Frame
             Application.targetFrameRate = cfg.targetFrameRate;
