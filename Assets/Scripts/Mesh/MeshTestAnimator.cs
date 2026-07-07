@@ -184,30 +184,21 @@ namespace LiftingTwin.Mesh
 
             public override void Update(float time)
             {
-                // 1. 底盘回转
-                float slewAngle = time * 25f;
-                var chassisRot = Quaternion.Euler(0, slewAngle, 0);
-                Manager.SetRotation(ObjectId, chassisRot);
-
-                // 获取底盘世界位置（所有部件共用同一位置，通过网格内偏移实现相对关系）
-                var chassisPos = Manager.Manager.GetTransform(ObjectId)?.position ?? Vector3.zero;
-
-                // 2. 吊臂俯仰（30° ~ 75° 往复），同时跟随底盘旋转
+                // 1. 吊臂俯仰（30° ~ 75° 往复）
                 float boomAngle = 52f + Mathf.Sin(time * 0.5f) * 22f;
                 Manager.UpdateMesh(_boomId, ProceduralCrane.GenerateBoom(boomAngle, _boomLength));
-                Manager.SetPosition(_boomId, chassisPos);
-                Manager.SetRotation(_boomId, chassisRot);
 
-                // 3. 吊钩跟随吊臂顶端，钢丝绳伸缩
+                // 获取底盘位置（底盘不旋转）
+                var chassisPos = Manager.Manager.GetTransform(ObjectId)?.position ?? Vector3.zero;
+                Manager.SetPosition(_boomId, chassisPos);
+
+                // 2. 吊钩跟随吊臂顶端，钢丝绳伸缩
                 var pivot = new Vector3(0.3f, 0.85f, 0);
                 var boomTipLocal = ProceduralCrane.GetBoomTip(pivot, boomAngle, _boomLength);
-                // 吊钩在世界坐标 = 底盘位置 + 回转后的吊臂顶端偏移
-                var hookWorldPos = chassisPos + chassisRot * boomTipLocal;
+                var hookWorldPos = chassisPos + boomTipLocal;
                 float cableLen = 1.0f + Mathf.Abs(Mathf.Sin(time * 0.7f)) * 2.0f;
-                // 吊钩网格以自身原点为吊臂顶端，向下伸出钢丝绳
                 Manager.UpdateMesh(_hookId, ProceduralCrane.GenerateHook(Vector3.zero, cableLen));
                 Manager.SetPosition(_hookId, hookWorldPos);
-                Manager.SetRotation(_hookId, chassisRot);
             }
         }
     }
