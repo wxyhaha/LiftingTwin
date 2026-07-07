@@ -108,6 +108,12 @@ namespace LiftingTwin.Visualization
                 _controller.Strafe(1f);
             else if (Input.GetKey(KeyCode.D))
                 _controller.Strafe(-1f);
+
+            // Q/E — 降低/升高
+            if (Input.GetKey(KeyCode.Q))
+                _controller.MoveVertical(-1f);
+            else if (Input.GetKey(KeyCode.E))
+                _controller.MoveVertical(1f);
         }
 
         /// <summary>

@@ -153,6 +153,16 @@ namespace LiftingTwin.Visualization
         }
 
         /// <summary>
+        /// 沿世界 Y 轴上下移动。由 Q/E 键驱动。
+        /// </summary>
+        /// <param name="delta">按键增量（正=升高，负=降低）</param>
+        public void MoveVertical(float delta)
+        {
+            var moveAmount = delta * _distance * _config.moveSpeed;
+            Target += Vector3.up * moveAmount;
+        }
+
+        /// <summary>
         /// 沿相机右方向水平移动。由 A/D 键驱动。
         /// </summary>
         /// <param name="delta">按键增量（正=右移，负=左移）</param>
