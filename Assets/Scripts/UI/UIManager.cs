@@ -241,7 +241,7 @@ namespace LiftingTwin.UI
             return go;
         }
 
-        private static Text CreateText(string name, Transform parent, string content,
+        private Text CreateText(string name, Transform parent, string content,
             Rect anchorRect, TextAnchor anchor, int fontSize, Color color)
         {
             var go = new GameObject(name);
