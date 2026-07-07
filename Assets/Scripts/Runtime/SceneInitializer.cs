@@ -157,7 +157,7 @@ namespace LiftingTwin.Runtime
             // 4. 点云测试（旋转的彩色球体）
             var pcGo = new GameObject("PointCloud (Test)");
             pcGo.transform.SetParent(transform);
-            pcGo.transform.localPosition = new Vector3(8, 1.5f, 3);
+            pcGo.transform.localPosition = new Vector3(4, 2, 5);
             var pcView = pcGo.AddComponent<PointCloudView>();
             pcGo.AddComponent<PointCloudTestController>().targetView = pcView;
 
