@@ -10,6 +10,7 @@
 //   仅在开发和调试阶段使用，后续可以移除或禁用。
 // -----------------------------------------------------------------------
 
+using LiftingTwin.Mesh;
 using LiftingTwin.Utils;
 using UnityEngine;
 
@@ -52,6 +53,9 @@ namespace LiftingTwin.Runtime
                 CreateReferenceCube();
             if (showGrid)
                 CreateGridHelper();
+
+            // 开发阶段：创建动态网格测试对象
+            CreateDynamicMeshTest();
 
             Log.Info("Runtime", "SceneInitializer: 场景初始化完成");
         }
@@ -114,6 +118,22 @@ namespace LiftingTwin.Runtime
             var grid = gridGo.AddComponent<GridDebug>();
             grid.gridSize = gridSize;
             grid.gridSpacing = gridSpacing;
+        }
+
+        /// <summary>
+        /// 开发阶段：在场景中创建一个动态网格测试对象。
+        /// 验证 DynamicMesh + MeshView 系统正常工作。
+        /// </summary>
+        private void CreateDynamicMeshTest()
+        {
+            var go = new GameObject("Dynamic Mesh (Test)");
+            go.transform.position = new Vector3(3, 0.5f, 3);
+            go.AddComponent<MeshFilter>();
+            go.AddComponent<MeshRenderer>();
+            go.AddComponent<MeshView>();
+            go.AddComponent<MeshTestController>();
+
+            Log.Debug("Runtime", "SceneInitializer: 创建动态网格测试对象");
         }
 
         /// <summary>
