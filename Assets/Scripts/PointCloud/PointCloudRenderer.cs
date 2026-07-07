@@ -84,8 +84,8 @@ namespace LiftingTwin.PointCloud
             int count = Mathf.Min(frame.Positions.Length, _maxPoints);
             var data = new PointData[count];
 
-            bool hasColors = frame.Colors is { Length: >= count };
-            bool hasSizes = frame.Sizes is { Length: >= count };
+            bool hasColors = frame.Colors != null && frame.Colors.Length >= count;
+            bool hasSizes = frame.Sizes != null && frame.Sizes.Length >= count;
 
             for (int i = 0; i < count; i++)
             {
@@ -121,7 +121,7 @@ namespace LiftingTwin.PointCloud
             if (_pointCount != _lastAllocatedCount)
             {
                 var args = new int[4];
-                args[0] = _quadMesh.GetIndexCount(0);
+                args[0] = (int)_quadMesh.GetIndexCount(0);
                 args[1] = _pointCount;
                 args[2] = 0;
                 args[3] = 0;
