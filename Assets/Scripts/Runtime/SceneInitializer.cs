@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------
 
 using LiftingTwin.Mesh;
+using LiftingTwin.PointCloud;
 using LiftingTwin.Utils;
 using UnityEngine;
 
@@ -55,8 +56,8 @@ namespace LiftingTwin.Runtime
             if (showGrid)
                 CreateGridHelper();
 
-            // 开发阶段：创建动态网格测试对象
-            CreateDynamicMeshTest();
+            // 开发阶段：创建测试对象
+            CreateTestObjects();
 
             Log.Info("Runtime", "SceneInitializer: 场景初始化完成");
         }
@@ -122,9 +123,9 @@ namespace LiftingTwin.Runtime
         }
 
         /// <summary>
-        /// 开发阶段：创建 MeshManager 并添加多个测试对象，演示多物体独立控制。
+        /// 开发阶段：创建 Mesh 和点云测试对象，演示各系统功能。
         /// </summary>
-        private void CreateDynamicMeshTest()
+        private void CreateTestObjects()
         {
             // 创建 MeshManager（也可拖拽 MeshManagerView 到 Bootstrap 上）
             var mgrObj = new GameObject("Mesh Manager");
@@ -153,7 +154,14 @@ namespace LiftingTwin.Runtime
                 .AddTower(meshView, towerId, towerFrame)
                 .AddCrane(meshView, craneChassisId, craneBoomId, craneHookId);
 
-            Log.Info("Runtime", "SceneInitializer: 创建 MeshManager 测试场景（输电塔 + 起重机）");
+            // 4. 点云测试（旋转的彩色球体）
+            var pcGo = new GameObject("PointCloud (Test)");
+            pcGo.transform.SetParent(transform);
+            pcGo.transform.localPosition = new Vector3(8, 1.5f, 3);
+            var pcView = pcGo.AddComponent<PointCloudView>();
+            pcGo.AddComponent<PointCloudTestController>().targetView = pcView;
+
+            Log.Info("Runtime", "SceneInitializer: 创建测试场景（输电塔 + 起重机 + 点云）");
         }
 
         /// <summary>
