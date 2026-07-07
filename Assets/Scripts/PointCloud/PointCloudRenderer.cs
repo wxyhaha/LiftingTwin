@@ -19,7 +19,7 @@ namespace LiftingTwin.PointCloud
     public class PointCloudRenderer
     {
         private readonly Material _material;
-        private readonly Mesh _quadMesh;
+        private readonly UnityEngine.Mesh _quadMesh;
         private readonly int _maxPoints;
 
         private ComputeBuffer _pointBuffer;
@@ -168,9 +168,9 @@ namespace LiftingTwin.PointCloud
         /// <summary>
         /// 创建用于点精灵的公告板网格（相机朝向的四边形）。
         /// </summary>
-        private static Mesh CreateQuadMesh()
+        private static UnityEngine.Mesh CreateQuadMesh()
         {
-            var mesh = new Mesh();
+            var mesh = new UnityEngine.Mesh();
             mesh.name = "PointCloud Quad";
 
             mesh.vertices = new[]
