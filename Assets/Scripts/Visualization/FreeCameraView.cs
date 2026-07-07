@@ -55,6 +55,7 @@ namespace LiftingTwin.Visualization
             if (!Input.mousePresent) return;
 
             HandleMouseInput();
+            HandleKeyboardInput();
 
             _controller.Tick(Time.deltaTime, out var position, out var rotation);
             transform.SetPositionAndRotation(position, rotation);
@@ -89,6 +90,24 @@ namespace LiftingTwin.Visualization
             {
                 _controller.Pan(-mouseDelta.x, -mouseDelta.y);
             }
+        }
+
+        /// <summary>
+        /// 键盘输入处理（WASD 移动）。
+        /// </summary>
+        private void HandleKeyboardInput()
+        {
+            // W/S — 前后移动
+            if (Input.GetKey(KeyCode.W))
+                _controller.MoveForward(1f);
+            else if (Input.GetKey(KeyCode.S))
+                _controller.MoveForward(-1f);
+
+            // A/D — 左右平移
+            if (Input.GetKey(KeyCode.A))
+                _controller.Strafe(-1f);
+            else if (Input.GetKey(KeyCode.D))
+                _controller.Strafe(1f);
         }
 
         /// <summary>

@@ -33,13 +33,17 @@ namespace LiftingTwin.Visualization
 
         [Header("Zoom")]
         [Tooltip("缩放速度系数")]
-        public float zoomSpeed = 1.0f;
+        public float zoomSpeed = 5.0f;
 
         [Tooltip("最近缩放距离")]
         public float minDistance = 0.5f;
 
         [Tooltip("最远缩放距离")]
         public float maxDistance = 500f;
+
+        [Header("Keyboard Movement")]
+        [Tooltip("WASD 键盘移动速度系数")]
+        public float moveSpeed = 0.05f;
 
         [Header("Smoothing")]
         [Tooltip("启用平滑过渡")]

@@ -138,6 +138,36 @@ namespace LiftingTwin.Visualization
         }
 
         /// <summary>
+        /// 沿相机观察方向前后移动。由 W/S 键驱动。
+        /// </summary>
+        /// <param name="delta">按键增量（正=前进，负=后退）</param>
+        public void MoveForward(float delta)
+        {
+            var forward = GetForward();
+            forward.y = 0f; // 保持水平
+            if (forward.sqrMagnitude < 0.001f) return;
+            forward.Normalize();
+
+            var moveAmount = delta * _distance * _config.moveSpeed;
+            Target += forward * moveAmount;
+        }
+
+        /// <summary>
+        /// 沿相机右方向水平移动。由 A/D 键驱动。
+        /// </summary>
+        /// <param name="delta">按键增量（正=右移，负=左移）</param>
+        public void Strafe(float delta)
+        {
+            var right = GetRight();
+            right.y = 0f; // 保持水平
+            if (right.sqrMagnitude < 0.001f) return;
+            right.Normalize();
+
+            var moveAmount = delta * _distance * _config.moveSpeed;
+            Target += right * moveAmount;
+        }
+
+        /// <summary>
         /// 每帧调用，返回平滑后的相机位置和旋转。
         /// </summary>
         /// <param name="deltaTime">帧时间</param>
