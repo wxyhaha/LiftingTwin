@@ -13,15 +13,12 @@ Shader "LiftingTwin/PointCloud"
         {
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
-
-            // 关闭背面剔除 — 点云四边形从任何角度都要可见
             Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 4.5
-            #pragma instancing_options procedural:ConfigureProcedural
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -36,26 +33,12 @@ Shader "LiftingTwin/PointCloud"
             StructuredBuffer<PointData> _PointBuffer;
             float _PointSize;
 
-            // ── 实例化设置：设置点位置和大小 ──
-            void ConfigureProcedural()
-            {
-                #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
-                    PointData data = _PointBuffer[unity_InstanceID];
-                    float s = data.size * _PointSize;
-
-                    // 仅平移 + 统一缩放（不旋转，四边形朝向由顶点着色器处理）
-                    unity_ObjectToWorld._m00_m01_m02 = float3(s, 0, 0);
-                    unity_ObjectToWorld._m10_m11_m12 = float3(0, s, 0);
-                    unity_ObjectToWorld._m20_m21_m22 = float3(0, 0, s);
-                    unity_ObjectToWorld._m03_m13_m23 = data.position;
-                    unity_ObjectToWorld._m33 = 1.0;
-                #endif
-            }
-
+            // ── 顶点着色器输入 ──
+            // DrawProcedural 不传 vertex 数据，只用 SV_VertexID / SV_InstanceID
             struct Attributes
             {
-                float4 vertex : POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                uint vertexID : SV_VertexID;
+                uint instanceID : SV_InstanceID;
             };
 
             struct Varyings
@@ -70,34 +53,35 @@ Shader "LiftingTwin/PointCloud"
             {
                 Varyings o;
 
-                #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
-                    PointData data = _PointBuffer[unity_InstanceID];
-                    float s = data.size * _PointSize;
+                // 从 ComputeBuffer 读取当前点数据
+                PointData data = _PointBuffer[v.instanceID];
 
-                    // 顶点在世界空间中的位置 = 点位置 + 相机朝向的公告板偏移
-                    float3 worldPos = data.position;
-                    float3 right = UNITY_MATRIX_I_V._m00_m10_m20; // 相机右向量
-                    float3 up = UNITY_MATRIX_I_V._m01_m11_m21;    // 相机上向量
+                // 公告板四边形：6 个顶点构成 2 个三角形
+                // Tri 1: 0(-1,-1) 1(1,-1) 2(1,1)
+                // Tri 2: 3(-1,-1) 4(1,1)  5(-1,1)
+                float cornerX = (v.vertexID == 1 || v.vertexID == 2 || v.vertexID == 4) ? 1.0 : -1.0;
+                float cornerY = (v.vertexID == 2 || v.vertexID == 4 || v.vertexID == 5) ? 1.0 : -1.0;
 
-                    worldPos += right * v.vertex.x * s;
-                    worldPos += up * v.vertex.y * s;
+                float s = data.size * _PointSize;
 
-                    o.positionCS = TransformWorldToHClip(worldPos);
-                    o.color = data.color;
-                #else
-                    o.positionCS = TransformWorldToHClip(
-                        mul(unity_ObjectToWorld, v.vertex).xyz);
-                    o.color = float4(1, 1, 1, 1);
-                #endif
+                // 公告板：始终面向摄像机
+                float3 right = UNITY_MATRIX_I_V._m00_m10_m20;
+                float3 up = UNITY_MATRIX_I_V._m01_m11_m21;
 
-                o.uv = v.vertex.xy + 0.5;
+                float3 worldPos = data.position + right * cornerX * s + up * cornerY * s;
+                o.positionCS = TransformWorldToHClip(worldPos);
+                o.color = data.color;
+
+                // UV 从 [-1,1] 映射到 [0,1]
+                o.uv = float2((cornerX + 1.0) * 0.5, (cornerY + 1.0) * 0.5);
+
                 return o;
             }
 
             // ── 片元着色器 ──
             float4 frag(Varyings i) : SV_Target
             {
-                // 圆形裁剪：只显示圆内的像素
+                // 圆形裁剪
                 float2 uvOffset = i.uv - 0.5;
                 if (dot(uvOffset, uvOffset) > 0.25)
                     discard;
