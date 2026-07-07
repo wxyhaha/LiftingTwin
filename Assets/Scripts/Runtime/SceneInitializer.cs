@@ -48,9 +48,9 @@ namespace LiftingTwin.Runtime
 
         private void Start()
         {
-            CreateGround();
-            if (createReferenceCube)
-                CreateReferenceCube();
+            // 地面和参考方块已在场景中静态放置，不再运行时重复创建
+            // 保留 CreateGround/CreateReferenceCube 方法备用
+
             if (showGrid)
                 CreateGridHelper();
 
