@@ -154,10 +154,10 @@ namespace LiftingTwin.Runtime
                 .AddTower(meshView, towerId, towerFrame)
                 .AddCrane(meshView, craneChassisId, craneBoomId, craneHookId);
 
-            // 4. 点云测试（旋转的彩色球体）
+            // 4. 点云测试（旋转的彩色球体，放在起重机附近）
             var pcGo = new GameObject("PointCloud (Test)");
             pcGo.transform.SetParent(transform);
-            pcGo.transform.localPosition = new Vector3(4, 2, 5);
+            pcGo.transform.localPosition = new Vector3(-4, 2, -2);
             var pcView = pcGo.AddComponent<PointCloudView>();
             pcGo.AddComponent<PointCloudTestController>().targetView = pcView;
 
