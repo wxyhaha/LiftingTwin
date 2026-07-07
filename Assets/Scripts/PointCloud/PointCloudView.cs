@@ -21,7 +21,7 @@ namespace LiftingTwin.PointCloud
         public Material pointMaterial;
 
         [Tooltip("点大小（世界单位）")]
-        public float pointSize = 0.05f;
+        public float pointSize = 0.5f;
 
         [Tooltip("最大点数，按需分配")]
         public int maxPoints = 1_000_000;
@@ -46,7 +46,7 @@ namespace LiftingTwin.PointCloud
             Log.Info("PointCloud", "PointCloudView 初始化完成");
         }
 
-        private void Update()
+        private void OnRenderObject()
         {
             if (_renderer != null)
                 _renderer.Render();

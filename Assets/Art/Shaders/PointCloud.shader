@@ -2,8 +2,7 @@ Shader "LiftingTwin/PointCloud"
 {
     Properties
     {
-        _PointSize("Point Size", Float) = 0.05
-        _MinPixelSize("Min Pixel Size", Float) = 2.0
+        _PointSize("Point Size", Float) = 0.5
     }
 
     SubShader
@@ -19,13 +18,11 @@ Shader "LiftingTwin/PointCloud"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 4.5
-            #pragma multi_compile_instancing
             #pragma instancing_options procedural:ConfigureProcedural
-            #pragma multi_compile _ DOTS_INSTANCING_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            // ── 点数据结构 ──
+            // ── 点数据结构（与 C# 端 PointData 一一对应） ──
             struct PointData
             {
                 float3 position;
@@ -35,86 +32,75 @@ Shader "LiftingTwin/PointCloud"
 
             StructuredBuffer<PointData> _PointBuffer;
             float _PointSize;
-            float _MinPixelSize;
 
-            // ── 实例化设置 ──
+            // ── 实例化设置：每实例调用，设置变换矩阵 ──
             void ConfigureProcedural()
             {
                 #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
                     PointData data = _PointBuffer[unity_InstanceID];
                     float s = data.size * _PointSize;
+
+                    // 构建变换矩阵：平移 + 统一缩放
                     unity_ObjectToWorld._m00_m01_m02 = float3(s, 0, 0);
                     unity_ObjectToWorld._m10_m11_m12 = float3(0, s, 0);
                     unity_ObjectToWorld._m20_m21_m22 = float3(0, 0, s);
                     unity_ObjectToWorld._m03_m13_m23 = data.position;
+                    unity_ObjectToWorld._m33 = 1.0;
+
+                    // 世界到物体的逆矩阵（简化处理，仅用于法线等）
+                    float invS = 1.0 / s;
+                    unity_WorldToObject._m00_m01_m02 = float3(invS, 0, 0);
+                    unity_WorldToObject._m10_m11_m12 = float3(0, invS, 0);
+                    unity_WorldToObject._m20_m21_m22 = float3(0, 0, invS);
+                    unity_WorldToObject._m03_m13_m23 = -data.position * invS;
+                    unity_WorldToObject._m33 = 1.0;
                 #endif
             }
 
-            // ── 顶点着色器输入 ──
             struct Attributes
             {
                 float4 vertex : POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            // ── 片元着色器输入 ──
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             // ── 顶点着色器 ──
             Varyings vert(Attributes v)
             {
                 Varyings o;
-                UNITY_SETUP_INSTANCE_ID(v);
-                UNITY_TRANSFER_INSTANCE_ID(v, o);
 
                 #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
+                    // 读取实例 ID 对应的点数据
                     PointData data = _PointBuffer[unity_InstanceID];
-
-                    // 相机朝向公告板（billboard）
-                    float3 right = UNITY_MATRIX_I_V._m00_m10_m20;
-                    float3 up = UNITY_MATRIX_I_V._m01_m11_m21;
-                    float size = data.size * _PointSize;
-
-                    float3 worldPos = data.position
-                        + right * v.vertex.x * size
-                        + up * v.vertex.y * size;
-
-                    o.positionCS = TransformWorldToHClip(worldPos);
                     o.color = data.color;
 
-                    // UV 用于片元圆形裁剪
-                    o.uv = v.vertex.xy + 0.5;
+                    // 使用标准变换管线（依赖 ConfigureProcedural 设置的矩阵）
+                    o.positionCS = TransformObjectToHClip(v.vertex.xyz);
                 #else
-                    // 非实例化回退
-                    float3 worldPos = TransformObjectToWorld(v.vertex.xyz);
-                    o.positionCS = TransformWorldToHClip(worldPos);
                     o.color = float4(1, 1, 1, 1);
-                    o.uv = v.vertex.xy + 0.5;
+                    o.positionCS = TransformObjectToHClip(v.vertex.xyz);
                 #endif
 
+                o.uv = v.vertex.xy + 0.5;
                 return o;
             }
 
             // ── 片元着色器 ──
             float4 frag(Varyings i) : SV_Target
             {
-                UNITY_SETUP_INSTANCE_ID(i);
-
-                // 圆形裁剪：UV 中心距离 > 0.5 则丢弃（圆点而非方块）
+                // 圆形裁剪（圆点而非方块）
                 float2 uvOffset = i.uv - 0.5;
-                float distSq = dot(uvOffset, uvOffset);
-                if (distSq > 0.25)
+                if (dot(uvOffset, uvOffset) > 0.25)
                     discard;
 
                 return i.color;
             }
-
             ENDHLSL
         }
     }
