@@ -122,19 +122,77 @@ namespace LiftingTwin.Runtime
         }
 
         /// <summary>
-        /// 开发阶段：在场景中创建一个动态网格测试对象。
-        /// 验证 DynamicMesh + MeshView 系统正常工作。
+        /// 开发阶段：创建 MeshManager 并添加多个测试对象，演示多物体独立控制。
         /// </summary>
         private void CreateDynamicMeshTest()
         {
-            var go = new GameObject("Dynamic Mesh (Test)");
-            go.transform.position = new Vector3(3, 0.5f, 3);
-            go.AddComponent<MeshFilter>();
-            go.AddComponent<MeshRenderer>();
-            go.AddComponent<MeshView>();
-            go.AddComponent<MeshTestController>();
+            // 创建 MeshManager（也可拖拽 MeshManagerView 到 Bootstrap 上）
+            var mgrObj = new GameObject("Mesh Manager");
+            mgrObj.transform.SetParent(transform);
+            var meshView = mgrObj.AddComponent<MeshManagerView>();
 
-            Log.Debug("Runtime", "SceneInitializer: 创建动态网格测试对象");
+            // 1. 输电塔（风致摇摆）
+            var towerFrame = ProceduralTower.Generate();
+            int towerId = meshView.AddObject("输电塔 (测试)", towerFrame);
+            meshView.SetPosition(towerId, new Vector3(3, 0, 3));
+
+            // 2. 吊装构件（简单的红色箱子，上下升降）
+            var partFrame = CreateTestBox(0.8f, 0.5f, 0.6f, new Color(0.8f, 0.2f, 0.1f));
+            int partId = meshView.AddObject("吊装构件 (测试)", partFrame);
+            meshView.SetPosition(partId, new Vector3(-3, 0, 3));
+
+            // 驱动动画
+            gameObject.AddComponent<MeshTestAnimator>()
+                .AddTower(meshView, towerId, towerFrame)
+                .AddLiftingPart(meshView, partId, partFrame, height: 4f, speed: 0.8f);
+
+            Log.Info("Runtime", "SceneInitializer: 创建 MeshManager 测试场景（输电塔 + 吊装构件）");
+        }
+
+        /// <summary>
+        /// 创建一个简单的彩色箱子网格。
+        /// </summary>
+        private static MeshFrame CreateTestBox(float w, float h, float d, Color color)
+        {
+            var verts = new Vector3[24];
+            var tris = new int[36];
+            var colors = new Color[24];
+            var normals = new Vector3[24];
+
+            Vector3[] dirs = {
+                Vector3.forward, Vector3.back, Vector3.up, Vector3.down,
+                Vector3.right, Vector3.left
+            };
+            Color[] faceColors = { color, color, color, color, color, color };
+
+            int vi = 0, ti = 0;
+            for (int f = 0; f < 6; f++)
+            {
+                var dir = dirs[f];
+                var upDir = f < 2 ? Vector3.up
+                    : (f == 2 ? Vector3.forward : (f == 3 ? Vector3.back : Vector3.up));
+                var rightDir = Vector3.Cross(dir, upDir).normalized;
+                var topDir = Vector3.Cross(rightDir, dir).normalized;
+
+                for (int c = 0; c < 4; c++)
+                {
+                    float u = (c == 0 || c == 3) ? -w * 0.5f : w * 0.5f;
+                    float v = (c == 0 || c == 1) ? -h * 0.5f : h * 0.5f;
+                    verts[vi + c] = dir * d * 0.5f + rightDir * u + topDir * v;
+                    colors[vi + c] = faceColors[f];
+                    normals[vi + c] = dir;
+                }
+
+                tris[ti + 0] = vi + 0; tris[ti + 1] = vi + 1; tris[ti + 2] = vi + 2;
+                tris[ti + 3] = vi + 0; tris[ti + 4] = vi + 2; tris[ti + 5] = vi + 3;
+                vi += 4; ti += 6;
+            }
+
+            return new MeshFrame
+            {
+                Vertices = verts, Triangles = tris,
+                Normals = normals, Colors = colors
+            };
         }
 
         /// <summary>
