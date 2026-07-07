@@ -14,6 +14,9 @@ Shader "LiftingTwin/PointCloud"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
+            // 关闭背面剔除 — 点云四边形从任何角度都要可见
+            Cull Off
+
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -22,7 +25,7 @@ Shader "LiftingTwin/PointCloud"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            // ── 点数据结构（与 C# 端 PointData 一一对应） ──
+            // ── 点数据结构 ──
             struct PointData
             {
                 float3 position;
@@ -33,27 +36,19 @@ Shader "LiftingTwin/PointCloud"
             StructuredBuffer<PointData> _PointBuffer;
             float _PointSize;
 
-            // ── 实例化设置：每实例调用，设置变换矩阵 ──
+            // ── 实例化设置：设置点位置和大小 ──
             void ConfigureProcedural()
             {
                 #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
                     PointData data = _PointBuffer[unity_InstanceID];
                     float s = data.size * _PointSize;
 
-                    // 构建变换矩阵：平移 + 统一缩放
+                    // 仅平移 + 统一缩放（不旋转，四边形朝向由顶点着色器处理）
                     unity_ObjectToWorld._m00_m01_m02 = float3(s, 0, 0);
                     unity_ObjectToWorld._m10_m11_m12 = float3(0, s, 0);
                     unity_ObjectToWorld._m20_m21_m22 = float3(0, 0, s);
                     unity_ObjectToWorld._m03_m13_m23 = data.position;
                     unity_ObjectToWorld._m33 = 1.0;
-
-                    // 世界到物体的逆矩阵（简化处理，仅用于法线等）
-                    float invS = 1.0 / s;
-                    unity_WorldToObject._m00_m01_m02 = float3(invS, 0, 0);
-                    unity_WorldToObject._m10_m11_m12 = float3(0, invS, 0);
-                    unity_WorldToObject._m20_m21_m22 = float3(0, 0, invS);
-                    unity_WorldToObject._m03_m13_m23 = -data.position * invS;
-                    unity_WorldToObject._m33 = 1.0;
                 #endif
             }
 
@@ -76,15 +71,23 @@ Shader "LiftingTwin/PointCloud"
                 Varyings o;
 
                 #if defined(UNITY_PROCEDURAL_INSTANCING_ENABLED)
-                    // 读取实例 ID 对应的点数据
                     PointData data = _PointBuffer[unity_InstanceID];
-                    o.color = data.color;
+                    float s = data.size * _PointSize;
 
-                    // 使用标准变换管线（依赖 ConfigureProcedural 设置的矩阵）
-                    o.positionCS = TransformObjectToHClip(v.vertex.xyz);
+                    // 顶点在世界空间中的位置 = 点位置 + 相机朝向的公告板偏移
+                    float3 worldPos = data.position;
+                    float3 right = UNITY_MATRIX_I_V._m00_m10_m20; // 相机右向量
+                    float3 up = UNITY_MATRIX_I_V._m01_m11_m21;    // 相机上向量
+
+                    worldPos += right * v.vertex.x * s;
+                    worldPos += up * v.vertex.y * s;
+
+                    o.positionCS = TransformWorldToHClip(worldPos);
+                    o.color = data.color;
                 #else
+                    o.positionCS = TransformWorldToHClip(
+                        mul(unity_ObjectToWorld, v.vertex).xyz);
                     o.color = float4(1, 1, 1, 1);
-                    o.positionCS = TransformObjectToHClip(v.vertex.xyz);
                 #endif
 
                 o.uv = v.vertex.xy + 0.5;
@@ -94,7 +97,7 @@ Shader "LiftingTwin/PointCloud"
             // ── 片元着色器 ──
             float4 frag(Varyings i) : SV_Target
             {
-                // 圆形裁剪（圆点而非方块）
+                // 圆形裁剪：只显示圆内的像素
                 float2 uvOffset = i.uv - 0.5;
                 if (dot(uvOffset, uvOffset) > 0.25)
                     discard;
