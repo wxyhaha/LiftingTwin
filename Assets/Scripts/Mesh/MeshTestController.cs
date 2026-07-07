@@ -15,7 +15,7 @@ namespace LiftingTwin.Mesh
     /// <summary>
     /// 网格系统开发测试控制器。
     /// 挂载到场景中任意 GameObject（如 Bootstrap），
-    /// 在 Start 时创建动态网格并驱动顶点变形动画。
+    /// 在 Start 时创建程序化生成的输电塔，并模拟微风摇摆。
     /// </summary>
     public class MeshTestController : MonoBehaviour
     {
@@ -24,11 +24,13 @@ namespace LiftingTwin.Mesh
         public MeshView targetMeshView;
 
         [Header("Animation")]
-        [Tooltip("顶点变形幅度")]
-        public float deformAmplitude = 0.5f;
+        [Tooltip("模拟风速（0 = 静止）")]
+        [Range(0f, 5f)]
+        public float windSpeed = 1.5f;
 
-        [Tooltip("变形频率")]
-        public float deformFrequency = 1.5f;
+        [Tooltip("风致摇摆幅度")]
+        [Range(0f, 0.5f)]
+        public float swayAmplitude = 0.08f;
 
         private MeshView _meshView;
         private MeshFrame _baseFrame;
@@ -47,28 +49,28 @@ namespace LiftingTwin.Mesh
                 _meshView = _meshObject.GetComponent<MeshView>();
             }
 
-            // 确保 MeshRenderer 有 URP 兼容材质
             EnsureMaterial();
 
-            _baseFrame = CreateTestCube();
+            _baseFrame = ProceduralTower.Generate();
             _meshView.ApplyFrame(_baseFrame);
-            Log.Info("Mesh", "MeshTestController 已加载测试网格，顶点数={0}", _baseFrame.Vertices.Length);
+            Log.Info("Mesh", "MeshTestController 已加载输电塔网格，顶点数={0}", _baseFrame.Vertices.Length);
         }
 
         private void Update()
         {
             _time += Time.deltaTime;
-            var animFrame = AnimateFrame(_baseFrame, _time);
+            var animFrame = ApplyWindSway(_baseFrame, _time);
             _meshView.ApplyFrame(animFrame);
         }
 
         /// <summary>
         /// 在场景中创建一个带 MeshView 的 GameObject。
+        /// 塔底在地面（y=0），位置在参考方块旁。
         /// </summary>
         private GameObject CreateMeshObject()
         {
             var go = new GameObject("Dynamic Mesh (Test)");
-            go.transform.position = new Vector3(3, 0.5f, 3);
+            go.transform.position = new Vector3(3, 0, 3);
             go.AddComponent<MeshFilter>();
             go.AddComponent<MeshRenderer>();
             go.AddComponent<MeshView>();
@@ -76,7 +78,7 @@ namespace LiftingTwin.Mesh
         }
 
         /// <summary>
-        /// 确保 MeshRenderer 有可用的材质。如果没有，创建一个 URP Lit 材质。
+        /// 确保 MeshRenderer 有 URP 兼容材质。
         /// </summary>
         private void EnsureMaterial()
         {
@@ -88,7 +90,7 @@ namespace LiftingTwin.Mesh
             if (shader != null)
             {
                 var mat = new Material(shader);
-                mat.color = new Color(0.3f, 0.6f, 1.0f); // 浅蓝色
+                mat.color = new Color(0.55f, 0.55f, 0.58f); // 钢灰色
                 renderer.material = mat;
                 Log.Debug("Mesh", "MeshTestController 已创建默认 URP Lit 材质");
             }
@@ -99,83 +101,34 @@ namespace LiftingTwin.Mesh
         }
 
         /// <summary>
-        /// 创建一个彩色立方体网格（24 顶点，6 面独立法线）。
+        /// 模拟风致摇摆：塔越高处摆动幅度越大。
         /// </summary>
-        private static MeshFrame CreateTestCube()
+        private static MeshFrame ApplyWindSway(MeshFrame baseFrame, float time)
         {
-            // 标准立方体：6 个面，每面 4 个独立顶点（共 24 顶点）
-            var verts = new Vector3[24];
-            var tris = new int[36];
-            var colors = new Color[24];
-            var normals = new Vector3[24];
+            if (baseFrame.Vertices == null || baseFrame.Vertices.Length == 0)
+                return baseFrame;
 
-            // 6 个面的方向
-            var faceDirections = new[] {
-                Vector3.forward, Vector3.back,
-                Vector3.up, Vector3.down,
-                Vector3.right, Vector3.left
-            };
-
-            // 6 个面的颜色
-            var faceColors = new[] {
-                Color.red, Color.cyan,
-                Color.green, Color.yellow,
-                Color.blue, Color.magenta
-            };
-
-            var vi = 0;
-            var ti = 0;
-
-            for (int f = 0; f < 6; f++)
-            {
-                var dir = faceDirections[f];
-                var color = faceColors[f];
-
-                // 计算该面朝向的 right 和 up 向量
-                var upDir = f < 2
-                    ? Vector3.up
-                    : (f == 2 ? Vector3.forward : (f == 3 ? Vector3.back : Vector3.up));
-                var rightDir = Vector3.Cross(dir, upDir).normalized;
-                var topDir = Vector3.Cross(rightDir, dir).normalized;
-
-                for (int c = 0; c < 4; c++)
-                {
-                    float u = (c == 0 || c == 3) ? -0.5f : 0.5f;
-                    float v = (c == 0 || c == 1) ? -0.5f : 0.5f;
-                    verts[vi + c] = dir * 0.5f + rightDir * u + topDir * v;
-                    colors[vi + c] = color;
-                    normals[vi + c] = dir;
-                }
-
-                tris[ti + 0] = vi + 0; tris[ti + 1] = vi + 1; tris[ti + 2] = vi + 2;
-                tris[ti + 3] = vi + 0; tris[ti + 4] = vi + 2; tris[ti + 5] = vi + 3;
-
-                vi += 4;
-                ti += 6;
-            }
-
-            return new MeshFrame
-            {
-                Vertices = verts,
-                Triangles = tris,
-                Normals = normals,
-                Colors = colors
-            };
-        }
-
-        /// <summary>
-        /// 对基础网格做顶点变形动画。
-        /// 沿法线方向推动顶点，产生呼吸/脉动效果。
-        /// </summary>
-        private static MeshFrame AnimateFrame(MeshFrame baseFrame, float time)
-        {
             var verts = new Vector3[baseFrame.Vertices.Length];
-            var deform = Mathf.Sin(time * 1.5f) * 0.3f;
+            float swayX = Mathf.Sin(time * 1.2f) * 0.08f;
+            float swayZ = Mathf.Sin(time * 0.9f + 0.5f) * 0.05f;
+
+            // 找最高点 Y 值用于归一化摇摆幅度
+            float maxY = float.MinValue;
+            for (int i = 0; i < baseFrame.Vertices.Length; i++)
+            {
+                if (baseFrame.Vertices[i].y > maxY)
+                    maxY = baseFrame.Vertices[i].y;
+            }
 
             for (int i = 0; i < verts.Length; i++)
             {
-                var dir = baseFrame.Normals != null ? baseFrame.Normals[i] : baseFrame.Vertices[i].normalized;
-                verts[i] = baseFrame.Vertices[i] + dir * deform;
+                var v = baseFrame.Vertices[i];
+                float t = maxY > 0.01f ? v.y / maxY : 0f; // 0 在底部，1 在顶部
+                verts[i] = new Vector3(
+                    v.x + swayX * t,
+                    v.y,
+                    v.z + swayZ * t
+                );
             }
 
             return new MeshFrame
