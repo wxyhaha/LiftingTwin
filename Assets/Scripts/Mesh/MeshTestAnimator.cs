@@ -6,6 +6,7 @@
 //   模拟吊装场景：输电塔随风摇摆，吊装构件上下运动。
 // -----------------------------------------------------------------------
 
+using System.Collections.Generic;
 using LiftingTwin.Utils;
 using UnityEngine;
 
