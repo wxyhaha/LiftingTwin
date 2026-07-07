@@ -141,12 +141,25 @@ namespace LiftingTwin.Runtime
             int partId = meshView.AddObject("吊装构件 (测试)", partFrame);
             meshView.SetPosition(partId, new Vector3(-3, 0, 3));
 
+            // 3. 移动式起重机（底盘 + 吊臂 + 吊钩）
+            int craneBaseX = -4, craneBaseZ = -3;
+            var chassisFrame = ProceduralCrane.GenerateChassis();
+            int craneChassisId = meshView.AddObject("起重机-底盘", chassisFrame);
+            meshView.SetPosition(craneChassisId, new Vector3(craneBaseX, 0, craneBaseZ));
+
+            int craneBoomId = meshView.AddObject("起重机-吊臂", ProceduralCrane.GenerateBoom());
+            meshView.SetPosition(craneBoomId, new Vector3(craneBaseX, 0, craneBaseZ));
+
+            int craneHookId = meshView.AddObject("起重机-吊钩", ProceduralCrane.GenerateHook(Vector3.zero));
+            meshView.SetPosition(craneHookId, new Vector3(craneBaseX, 0, craneBaseZ));
+
             // 驱动动画
             gameObject.AddComponent<MeshTestAnimator>()
                 .AddTower(meshView, towerId, towerFrame)
-                .AddLiftingPart(meshView, partId, partFrame, height: 4f, speed: 0.8f);
+                .AddLiftingPart(meshView, partId, partFrame, height: 4f, speed: 0.8f)
+                .AddCrane(meshView, craneChassisId, craneBoomId, craneHookId);
 
-            Log.Info("Runtime", "SceneInitializer: 创建 MeshManager 测试场景（输电塔 + 吊装构件）");
+            Log.Info("Runtime", "SceneInitializer: 创建 MeshManager 测试场景（输电塔 + 吊装构件 + 起重机）");
         }
 
         /// <summary>

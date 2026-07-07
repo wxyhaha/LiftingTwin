@@ -3,7 +3,7 @@
 //
 // 用途：
 //   演示通过 MeshManager 管理多个 Mesh 对象并独立驱动动画。
-//   模拟吊装场景：输电塔随风摇摆，吊装构件上下运动。
+//   模拟吊装场景：输电塔随风摇摆，移动式起重机回转起吊。
 // -----------------------------------------------------------------------
 
 using System.Collections.Generic;
@@ -23,10 +23,8 @@ namespace LiftingTwin.Mesh
         private void Update()
         {
             float t = Time.time;
-            foreach (var entry in _entries)
-            {
-                entry.Update(t);
-            }
+            for (int i = _entries.Count - 1; i >= 0; i--)
+                _entries[i].Update(t);
         }
 
         /// <summary>
@@ -51,13 +49,24 @@ namespace LiftingTwin.Mesh
         }
 
         /// <summary>
-        /// 添加一个旋转物体（如吊臂）。
+        /// 添加一个旋转物体。
         /// </summary>
         public MeshTestAnimator AddRotatingPart(MeshManagerView mgr, int id,
             Vector3 axis, float speed = 30f)
         {
             _entries.Add(new RotateEntry(mgr, id, axis, speed));
             Log.Info("Mesh", "MeshTestAnimator: 添加旋转物体 id={0}", id);
+            return this;
+        }
+
+        /// <summary>
+        /// 添加一台移动式起重机（底盘回转 + 吊臂俯仰 + 吊钩升降）。
+        /// </summary>
+        public MeshTestAnimator AddCrane(MeshManagerView mgr,
+            int chassisId, int boomId, int hookId)
+        {
+            _entries.Add(new CraneEntry(mgr, chassisId, boomId, hookId));
+            Log.Info("Mesh", "MeshTestAnimator: 添加起重机（3 部件）");
             return this;
         }
 
@@ -153,6 +162,52 @@ namespace LiftingTwin.Mesh
             {
                 var rot = Quaternion.AngleAxis(time * _speed, _axis);
                 Manager.SetRotation(ObjectId, rot);
+            }
+        }
+
+        /// <summary>
+        /// 移动式起重机动画：底盘回转 + 吊臂俯仰 + 吊钩随动。
+        /// 三个独立管理对象在相同世界位置，通过网格自身偏移实现相对位置。
+        /// </summary>
+        private class CraneEntry : AnimatedEntry
+        {
+            private readonly int _boomId;
+            private readonly int _hookId;
+            private readonly float _boomLength = 4.5f;
+
+            public CraneEntry(MeshManagerView mgr, int chassisId, int boomId, int hookId)
+                : base(mgr, chassisId)
+            {
+                _boomId = boomId;
+                _hookId = hookId;
+            }
+
+            public override void Update(float time)
+            {
+                // 1. 底盘回转
+                float slewAngle = time * 25f;
+                var chassisRot = Quaternion.Euler(0, slewAngle, 0);
+                Manager.SetRotation(ObjectId, chassisRot);
+
+                // 获取底盘世界位置（所有部件共用同一位置，通过网格内偏移实现相对关系）
+                var chassisPos = Manager.Manager.GetTransform(ObjectId)?.position ?? Vector3.zero;
+
+                // 2. 吊臂俯仰（30° ~ 75° 往复），同时跟随底盘旋转
+                float boomAngle = 52f + Mathf.Sin(time * 0.5f) * 22f;
+                Manager.UpdateMesh(_boomId, ProceduralCrane.GenerateBoom(boomAngle, _boomLength));
+                Manager.SetPosition(_boomId, chassisPos);
+                Manager.SetRotation(_boomId, chassisRot);
+
+                // 3. 吊钩跟随吊臂顶端，钢丝绳伸缩
+                var pivot = new Vector3(0.3f, 0.85f, 0);
+                var boomTipLocal = ProceduralCrane.GetBoomTip(pivot, boomAngle, _boomLength);
+                // 吊钩在世界坐标 = 底盘位置 + 回转后的吊臂顶端偏移
+                var hookWorldPos = chassisPos + chassisRot * boomTipLocal;
+                float cableLen = 1.0f + Mathf.Abs(Mathf.Sin(time * 0.7f)) * 2.0f;
+                // 吊钩网格以自身原点为吊臂顶端，向下伸出钢丝绳
+                Manager.UpdateMesh(_hookId, ProceduralCrane.GenerateHook(Vector3.zero, cableLen));
+                Manager.SetPosition(_hookId, hookWorldPos);
+                Manager.SetRotation(_hookId, chassisRot);
             }
         }
     }
