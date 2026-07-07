@@ -105,9 +105,9 @@ namespace LiftingTwin.Visualization
 
             // A/D — 左右平移
             if (Input.GetKey(KeyCode.A))
-                _controller.Strafe(-1f);
-            else if (Input.GetKey(KeyCode.D))
                 _controller.Strafe(1f);
+            else if (Input.GetKey(KeyCode.D))
+                _controller.Strafe(-1f);
         }
 
         /// <summary>
