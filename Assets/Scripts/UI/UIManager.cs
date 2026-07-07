@@ -1,0 +1,220 @@
+// -----------------------------------------------------------------------
+// LiftingTwin - UI 管理器
+//
+// 职责：
+//   创建并更新游戏内 HUD：FPS、状态信息、操作提示等。
+//   挂载到 Bootstrap 上，自动在 Awake 构建 Canvas。
+// -----------------------------------------------------------------------
+
+using LiftingTwin.Mesh;
+using LiftingTwin.PointCloud;
+using LiftingTwin.Utils;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace LiftingTwin.UI
+{
+    /// <summary>
+    /// UI 管理器。自动创建 Canvas 并显示系统状态信息。
+    /// </summary>
+    public class UIManager : MonoBehaviour
+    {
+        [Header("References (自动查找)")]
+        public MeshManagerView meshManager;
+        public PointCloudView pointCloudView;
+
+        [Header("Display")]
+        public bool showFPS = true;
+        public bool showInfoPanel = true;
+        public bool showControlHints = true;
+
+        private Text _fpsText;
+        private Text _statusText;
+        private Text _infoText;
+        private Text _hintText;
+
+        private float _fpsDelta;
+        private float _fpsLastUpdate;
+        private int _fpsFrameCount;
+
+        private void Awake()
+        {
+            CreateCanvas();
+            Log.Info("UI", "UIManager 初始化完成");
+        }
+
+        private void Update()
+        {
+            if (showFPS) UpdateFPS();
+            if (showInfoPanel) UpdateInfoPanel();
+        }
+
+        // ── Canvas 构建 ──
+
+        private void CreateCanvas()
+        {
+            var canvasGO = new GameObject("HUD Canvas");
+            canvasGO.transform.SetParent(transform);
+
+            var canvas = canvasGO.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var scaler = canvasGO.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
+            canvasGO.AddComponent<GraphicRaycaster>();
+
+            // 顶部状态栏
+            if (showFPS)
+                CreateTopBar(canvasGO.transform);
+
+            // 信息面板
+            if (showInfoPanel)
+                CreateInfoPanel(canvasGO.transform);
+
+            // 底部操作提示
+            if (showControlHints)
+                CreateControlHints(canvasGO.transform);
+        }
+
+        private void CreateTopBar(Transform parent)
+        {
+            var bar = CreatePanel("TopBar", parent, new Rect(0, 0.9f, 1, 0.1f),
+                new Color(0, 0, 0, 0.5f));
+
+            // 标题
+            CreateText("TitleText", bar.transform, "LiftingTwin",
+                new Rect(0.02f, 0, 0.3f, 1), TextAnchor.MiddleLeft, 20, Color.white);
+
+            // 状态指示
+            _statusText = CreateText("StatusText", bar.transform, "● 就绪",
+                new Rect(0.35f, 0, 0.3f, 1), TextAnchor.MiddleCenter, 16, new Color(0.3f, 0.8f, 0.3f));
+
+            // FPS
+            _fpsText = CreateText("FPSText", bar.transform, "60 FPS",
+                new Rect(0.85f, 0, 0.13f, 1), TextAnchor.MiddleRight, 18, Color.white);
+        }
+
+        private void CreateInfoPanel(Transform parent)
+        {
+            var panel = CreatePanel("InfoPanel", parent, new Rect(0.01f, 0.12f, 0.18f, 0.25f),
+                new Color(0, 0, 0, 0.4f));
+
+            _infoText = CreateText("InfoText", panel.transform, "",
+                new Rect(0.06f, 0, 0.88f, 1), TextAnchor.UpperLeft, 14, new Color(0.8f, 0.8f, 0.8f));
+        }
+
+        private void CreateControlHints(Transform parent)
+        {
+            _hintText = CreateText("ControlHints", parent,
+                "WASD 移动  |  Q/E 升降  |  鼠标右键旋转  |  滚轮缩放",
+                new Rect(0.15f, 0.02f, 0.7f, 0.04f),
+                TextAnchor.MiddleCenter, 14, new Color(1, 1, 1, 0.5f));
+        }
+
+        // ── 更新 ──
+
+        private void UpdateFPS()
+        {
+            _fpsFrameCount++;
+            _fpsDelta += Time.unscaledDeltaTime;
+
+            if (_fpsDelta >= 0.5f)
+            {
+                float fps = _fpsFrameCount / _fpsDelta;
+                _fpsText.text = $"{Mathf.RoundToInt(fps)} FPS";
+                _fpsFrameCount = 0;
+                _fpsDelta = 0f;
+            }
+        }
+
+        private void UpdateInfoPanel()
+        {
+            // 自动查找组件（首次）
+            if (meshManager == null)
+                meshManager = FindObjectOfType<MeshManagerView>();
+            if (pointCloudView == null)
+                pointCloudView = FindObjectOfType<PointCloudView>();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("--- 场景信息 ---");
+
+            // Mesh 对象数
+            if (meshManager != null && meshManager.Manager != null)
+                sb.AppendLine($"Mesh 对象: {meshManager.Manager.ObjectCount}");
+            else
+                sb.AppendLine("Mesh 管理器: 未就绪");
+
+            // 点云
+            if (pointCloudView != null && pointCloudView.GetRenderer() != null)
+                sb.AppendLine($"点云点数: {pointCloudView.GetRenderer().PointCount}");
+            else
+                sb.AppendLine("点云: 未就绪");
+
+            // 相机位置
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                var p = cam.transform.position;
+                sb.AppendLine($"相机: ({p.x:F1}, {p.y:F1}, {p.z:F1})");
+            }
+
+            _infoText.text = sb.ToString();
+        }
+
+        /// <summary>
+        /// 设置连接状态文字。
+        /// </summary>
+        public void SetStatus(string text, Color color)
+        {
+            if (_statusText != null)
+            {
+                _statusText.text = $"● {text}";
+                _statusText.color = color;
+            }
+        }
+
+        // ── UI 构建辅助 ──
+
+        private static GameObject CreatePanel(string name, Transform parent,
+            Rect anchorRect, Color color)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(anchorRect.xMin, anchorRect.yMin);
+            rt.anchorMax = new Vector2(anchorRect.xMax, anchorRect.yMax);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            var img = go.AddComponent<Image>();
+            img.color = color;
+
+            return go;
+        }
+
+        private static Text CreateText(string name, Transform parent, string content,
+            Rect anchorRect, TextAnchor anchor, int fontSize, Color color)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(anchorRect.xMin, anchorRect.yMin);
+            rt.anchorMax = new Vector2(anchorRect.xMax, anchorRect.yMax);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            var text = go.AddComponent<Text>();
+            text.text = content;
+            text.fontSize = fontSize;
+            text.color = color;
+            text.alignment = anchor;
+            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            return text;
+        }
+    }
+}

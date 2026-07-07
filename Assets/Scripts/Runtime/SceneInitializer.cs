@@ -12,6 +12,7 @@
 
 using LiftingTwin.Mesh;
 using LiftingTwin.PointCloud;
+using LiftingTwin.UI;
 using LiftingTwin.Utils;
 using UnityEngine;
 
@@ -58,6 +59,9 @@ namespace LiftingTwin.Runtime
 
             // 开发阶段：创建测试对象
             CreateTestObjects();
+
+            // 挂载 UI 管理器（HUD：FPS、信息面板、操作提示）
+            gameObject.AddComponent<UIManager>();
 
             Log.Info("Runtime", "SceneInitializer: 场景初始化完成");
         }
