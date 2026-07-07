@@ -11,6 +11,7 @@ using LiftingTwin.PointCloud;
 using LiftingTwin.Utils;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 namespace LiftingTwin.UI
 {
@@ -32,6 +33,7 @@ namespace LiftingTwin.UI
         private Text _statusText;
         private Text _infoText;
         private Text _hintText;
+        private Font _font;
 
         private float _fpsDelta;
         private float _fpsLastUpdate;
@@ -39,25 +41,39 @@ namespace LiftingTwin.UI
 
         private void Awake()
         {
-            CreateCanvas();
-            Log.Info("UI", "UIManager 初始化完成");
+            try
+            {
+                CreateCanvas();
+                Log.Info("UI", "UIManager 初始化完成");
+            }
+            catch (System.Exception ex)
+            {
+                Log.Error("UI", "UIManager 初始化失败: {0}", ex.Message);
+                enabled = false;
+            }
         }
 
         private void Update()
         {
-            if (showFPS) UpdateFPS();
-            if (showInfoPanel) UpdateInfoPanel();
+            if (showFPS && _fpsText != null) UpdateFPS();
+            if (showInfoPanel && _infoText != null) UpdateInfoPanel();
         }
 
         // ── Canvas 构建 ──
 
         private void CreateCanvas()
         {
+            // 查找可用的字体
+            _font = ResolveFont();
+            if (_font == null)
+                Log.Warn("UI", "未找到 Arial/LegacyRuntime 字体，UI 文字可能不显示");
+
             var canvasGO = new GameObject("HUD Canvas");
             canvasGO.transform.SetParent(transform);
 
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 1000; // 确保在最上层
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -76,6 +92,36 @@ namespace LiftingTwin.UI
             // 底部操作提示
             if (showControlHints)
                 CreateControlHints(canvasGO.transform);
+        }
+
+        /// <summary>
+        /// 查找可用的系统字体。
+        /// </summary>
+        private static Font ResolveFont()
+        {
+            // 按优先级尝试不同的字体源
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null) return font;
+
+            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (font != null) return font;
+
+            // 尝试系统字体
+            var systemFonts = Font.GetOSInstalledFontNames();
+            foreach (var name in systemFonts)
+            {
+                if (name.ToLower().Contains("arial") || name.ToLower().Contains("sans") || name.ToLower().Contains("segoe"))
+                {
+                    font = Font.CreateDynamicFontFromOSFont(name, 16);
+                    if (font != null) return font;
+                }
+            }
+
+            // 第一个可用的系统字体
+            if (systemFonts.Length > 0)
+                return Font.CreateDynamicFontFromOSFont(systemFonts[0], 16);
+
+            return null;
         }
 
         private void CreateTopBar(Transform parent)
@@ -212,7 +258,7 @@ namespace LiftingTwin.UI
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = anchor;
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = _font;
 
             return text;
         }
