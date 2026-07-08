@@ -56,10 +56,16 @@ namespace LiftingTwin.UI
 
         private void Awake()
         {
+            _highlightBlock = new MaterialPropertyBlock();
+        }
+
+        private void Start()
+        {
             _camera = Camera.main;
             if (_camera == null)
-                Log.Warn("UI", "SelectionManager: 未找到 Main Camera");
-            _highlightBlock = new MaterialPropertyBlock();
+                Log.Error("UI", "SelectionManager: 未找到 Main Camera，请确保 Camera 标签为 MainCamera");
+            else
+                Log.Info("UI", "SelectionManager 就绪，Camera={0}", _camera.name);
         }
 
         private void Update()
@@ -79,13 +85,19 @@ namespace LiftingTwin.UI
 
         private void HandleClick()
         {
-            if (_camera == null) return;
+            if (_camera == null)
+            {
+                _camera = Camera.main; // 延迟重试
+                if (_camera == null) return;
+            }
 
             var ray = _camera.ScreenPointToRay(Input.mousePosition);
 
             if (Physics.Raycast(ray, out var hit, 500f))
             {
                 var hitGo = hit.collider.gameObject;
+                Log.Debug("UI", "点击命中: {0} (layer={1}, hasMeshView={2})",
+                    hitGo.name, hitGo.layer, hitGo.GetComponent<MeshView>() != null);
 
                 // 检查是否有 MeshView（管理对象的标识）
                 if (hitGo.GetComponent<MeshView>() != null)
@@ -93,6 +105,10 @@ namespace LiftingTwin.UI
                     Select(hitGo);
                     return;
                 }
+            }
+            else
+            {
+                Log.Debug("UI", "点击未命中任何物体");
             }
 
             // 点击空白处取消选中
