@@ -61,10 +61,13 @@ namespace LiftingTwin.UI
 
         private void Start()
         {
-            _camera = Camera.main;
-            if (_camera == null)
-                Log.Error("UI", "SelectionManager: 未找到 Main Camera，请确保 Camera 标签为 MainCamera");
-            else
+            ResolveCamera();
+        }
+
+        private void ResolveCamera()
+        {
+            _camera = FindObjectOfType<Camera>();
+            if (_camera != null)
                 Log.Info("UI", "SelectionManager 就绪，Camera={0}", _camera.name);
         }
 
@@ -87,7 +90,7 @@ namespace LiftingTwin.UI
         {
             if (_camera == null)
             {
-                _camera = Camera.main; // 延迟重试
+                ResolveCamera();
                 if (_camera == null) return;
             }
 
