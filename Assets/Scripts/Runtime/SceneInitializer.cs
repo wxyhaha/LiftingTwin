@@ -60,8 +60,9 @@ namespace LiftingTwin.Runtime
             // 开发阶段：创建测试对象
             CreateTestObjects();
 
-            // 挂载 UI 管理器（HUD：FPS、信息面板、操作提示）
+            // 挂载 UI 管理器 + 物体选中系统
             gameObject.AddComponent<UIManager>();
+            gameObject.AddComponent<SelectionManager>();
 
             Log.Info("Runtime", "SceneInitializer: 场景初始化完成");
         }
@@ -138,19 +139,19 @@ namespace LiftingTwin.Runtime
 
             // 1. 输电塔（风致摇摆）
             var towerFrame = ProceduralTower.Generate();
-            int towerId = meshView.AddObject("输电塔 (测试)", towerFrame);
+            int towerId = meshView.AddObject("输电塔 (测试)", towerFrame, addCollider: true);
             meshView.SetPosition(towerId, new Vector3(3, 0, 3));
 
             // 2. 移动式起重机（底盘 + 吊臂 + 吊钩）
             int craneBaseX = -4, craneBaseZ = -3;
             var chassisFrame = ProceduralCrane.GenerateChassis();
-            int craneChassisId = meshView.AddObject("起重机-底盘", chassisFrame);
+            int craneChassisId = meshView.AddObject("起重机-底盘", chassisFrame, addCollider: true);
             meshView.SetPosition(craneChassisId, new Vector3(craneBaseX, 0, craneBaseZ));
 
-            int craneBoomId = meshView.AddObject("起重机-吊臂", ProceduralCrane.GenerateBoom());
+            int craneBoomId = meshView.AddObject("起重机-吊臂", ProceduralCrane.GenerateBoom(), addCollider: true);
             meshView.SetPosition(craneBoomId, new Vector3(craneBaseX, 0, craneBaseZ));
 
-            int craneHookId = meshView.AddObject("起重机-吊钩", ProceduralCrane.GenerateHook(Vector3.zero));
+            int craneHookId = meshView.AddObject("起重机-吊钩", ProceduralCrane.GenerateHook(Vector3.zero), addCollider: true);
             meshView.SetPosition(craneHookId, new Vector3(craneBaseX, 0, craneBaseZ));
 
             // 驱动动画

@@ -51,8 +51,10 @@ namespace LiftingTwin.Mesh
         /// <param name="name">对象名称</param>
         /// <param name="frame">初始网格数据（可为空，稍后更新）</param>
         /// <param name="material">材质，不指定则使用管理器默认材质</param>
+        /// <param name="addCollider">是否添加 MeshCollider（用于射线选中）</param>
         /// <returns>新对象的唯一 ID</returns>
-        public int AddObject(string name, MeshFrame frame, Material material = null)
+        public int AddObject(string name, MeshFrame frame, Material material = null,
+            bool addCollider = false)
         {
             var go = new GameObject(name);
             go.transform.SetParent(_parent);
@@ -68,6 +70,16 @@ namespace LiftingTwin.Mesh
 
             if (frame.IsValid)
                 meshView.ApplyFrame(frame);
+
+            // 添加碰撞体（用于鼠标选中）
+            if (addCollider)
+            {
+                var collider = go.AddComponent<MeshCollider>();
+                // 使用 DynamicMesh 的 Unity Mesh 作为碰撞网格
+                var dynamicMesh = meshView.GetDynamicMesh();
+                if (dynamicMesh != null)
+                    collider.sharedMesh = dynamicMesh.Mesh;
+            }
 
             var id = _nextId++;
             _objects[id] = new MeshObjectData

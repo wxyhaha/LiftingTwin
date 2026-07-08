@@ -11,7 +11,7 @@ using LiftingTwin.PointCloud;
 using LiftingTwin.Utils;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
+using System.Text;
 
 namespace LiftingTwin.UI
 {
@@ -32,8 +32,12 @@ namespace LiftingTwin.UI
         private Text _fpsText;
         private Text _statusText;
         private Text _infoText;
+        private Text _selectionText;
         private Text _hintText;
         private Font _font;
+
+        private SelectionManager _selection;
+        private GameObject _selectionPanel;
 
         private float _fpsDelta;
         private float _fpsLastUpdate;
@@ -85,9 +89,12 @@ namespace LiftingTwin.UI
             if (showFPS)
                 CreateTopBar(canvasGO.transform);
 
-            // 信息面板
+            // 场景信息面板
             if (showInfoPanel)
                 CreateInfoPanel(canvasGO.transform);
+
+            // 选中物体面板（独立于 infoPanel，有选中时显示）
+            CreateSelectionPanel(canvasGO.transform);
 
             // 底部操作提示
             if (showControlHints)
@@ -149,6 +156,67 @@ namespace LiftingTwin.UI
 
             _infoText = CreateText("InfoText", panel.transform, "",
                 new Rect(0.06f, 0, 0.88f, 1), TextAnchor.UpperLeft, 14, new Color(0.8f, 0.8f, 0.8f));
+        }
+
+        private void CreateSelectionPanel(Transform parent)
+        {
+            _selectionPanel = CreatePanel("SelectionPanel", parent,
+                new Rect(0.01f, 0.38f, 0.18f, 0.15f), new Color(0.1f, 0.3f, 0.5f, 0.5f));
+            _selectionPanel.SetActive(false); // 默认隐藏
+
+            _selectionText = CreateText("SelectionText", _selectionPanel.transform, "",
+                new Rect(0.06f, 0, 0.88f, 1), TextAnchor.UpperLeft, 14, new Color(0.9f, 0.9f, 1f));
+        }
+
+        /// <summary>
+        /// 绑定选中管理器事件。
+        /// </summary>
+        private void Start()
+        {
+            _selection = GetComponent<SelectionManager>();
+            if (_selection != null)
+            {
+                _selection.OnSelectionChanged += OnSelectionChanged;
+                Log.Info("UI", "UIManager 已绑定 SelectionManager");
+            }
+        }
+
+        private void OnSelectionChanged(GameObject obj)
+        {
+            if (_selectionPanel == null) return;
+
+            if (obj == null)
+            {
+                _selectionPanel.SetActive(false);
+                return;
+            }
+
+            _selectionPanel.SetActive(true);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"--- 选中: {obj.name} ---");
+
+            // 位置
+            sb.AppendLine($"位置: ({obj.transform.position.x:F2}, {obj.transform.position.y:F2}, {obj.transform.position.z:F2})");
+
+            // 顶点数
+            var meshView = obj.GetComponent<MeshView>();
+            if (meshView != null)
+            {
+                var dm = meshView.GetDynamicMesh();
+                if (dm != null && dm.Mesh != null)
+                {
+                    sb.AppendLine($"顶点: {dm.Mesh.vertexCount}");
+                    sb.AppendLine($"三角形: {dm.Mesh.triangles.Length / 3}");
+                }
+            }
+
+            _selectionText.text = sb.ToString();
+        }
+
+        private void OnDestroy()
+        {
+            if (_selection != null)
+                _selection.OnSelectionChanged -= OnSelectionChanged;
         }
 
         private void CreateControlHints(Transform parent)
