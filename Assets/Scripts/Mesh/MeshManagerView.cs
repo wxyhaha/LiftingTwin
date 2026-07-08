@@ -66,8 +66,9 @@ namespace LiftingTwin.Mesh
         // ---- 便捷代理方法 ----
 
         /// <summary>添加 Mesh 对象。</summary>
-        public int AddObject(string name, MeshFrame frame, Material material = null)
-            => Manager.AddObject(name, frame, material);
+        public int AddObject(string name, MeshFrame frame, Material material = null,
+            bool addCollider = false)
+            => Manager.AddObject(name, frame, material, addCollider);
 
         /// <summary>移除对象。</summary>
         public bool RemoveObject(int id) => Manager.RemoveObject(id);
