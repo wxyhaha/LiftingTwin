@@ -71,3 +71,21 @@ Packages/
 
 # --- User-specific project settings ---
 UserSettings/
+
+# --- Qt / CMake build artifacts ---
+QtUI/build/
+QtUI/build2/
+QtUI/build3/
+QtUI/bin/
+QtUI/lib/
+QtUI/.qmllint/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+.qmldir
