@@ -1,0 +1,14 @@
+TopBar 1.0 components/TopBar.qml
+LeftPanel 1.0 components/LeftPanel.qml
+CenterView 1.0 components/CenterView.qml
+RightPanel 1.0 components/RightPanel.qml
+BottomPanel 1.0 components/BottomPanel.qml
+StatusCard 1.0 components/StatusCard.qml
+AlarmList 1.0 components/AlarmList.qml
+EventTable 1.0 components/EventTable.qml
+CraneStatus 1.0 components/CraneStatus.qml
+RiskPanel 1.0 components/RiskPanel.qml
+SensorStatus 1.0 components/SensorStatus.qml
+PersonnelList 1.0 components/PersonnelList.qml
+ModelLayers 1.0 components/ModelLayers.qml
+EquipmentList 1.0 components/EquipmentList.qml
