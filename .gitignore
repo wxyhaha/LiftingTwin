@@ -72,6 +72,16 @@ Packages/
 # --- User-specific project settings ---
 UserSettings/
 
+# --- Qt test / scratch files ---
+QtUI/simple.qml
+QtUI/test.qml
+QtUI/simple_test.cpp
+QtUI/start.bat
+QtUI/start2.bat
+QtUI/test_main.bat
+QtUI/test_qml.bat
+UpgradeLog.htm
+
 # --- Qt / CMake build artifacts ---
 QtUI/build/
 QtUI/build2/
