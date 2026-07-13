@@ -258,14 +258,26 @@ ApplicationWindow {
             Text { text: "三维数字孪生场景窗口"; color: "white"; font.pixelSize: 12; font.bold: true; anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter }
         }
 
-        // 大块 3D 画布区域
+        // Unity 3D 渲染窗口
         Rectangle {
+            id: unityContainer
             anchors.top: cHead.bottom; anchors.bottom: parent.bottom; width: parent.width
-            color: "#e2e8f0" 
+            color: "#0d1a2a"
 
+            // Unity 未就绪时的占位提示
             Text {
-                text: "🖼️ [ 核心 3D 数字孪生渲染大视窗 ]\n左右均已写死物理阻隔，这里将 100% 完美扩展铺满";
-                font.pixelSize: 14; font.bold: true; color: clrTxtSub; horizontalAlignment: Text.AlignHCenter; anchors.centerIn: parent
+                id: unityPlaceholder
+                text: "三维数字孪生场景窗口\n等待 Unity 启动..."
+                font.pixelSize: 14; color: "#4a6a8a"
+                horizontalAlignment: Text.AlignHCenter
+                anchors.centerIn: parent
+            }
+
+            // 嵌入 Unity
+            Component.onCompleted: {
+                if (typeof unityEmbed !== "undefined") {
+                    unityEmbed.embed(this)
+                }
             }
         }
     }

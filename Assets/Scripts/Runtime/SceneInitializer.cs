@@ -48,8 +48,19 @@ namespace LiftingTwin.Runtime
         [Tooltip("网格间距")]
         public float gridSpacing = 1.0f;
 
+        private Material _groundMat;
+        private Material _grayMat;
+        private Material _orangeMat;
+
         private void Start()
         {
+            _groundMat = Resources.Load<Material>("Mat_Ground");
+            _grayMat = Resources.Load<Material>("Mat_Gray");
+            _orangeMat = Resources.Load<Material>("Mat_Orange");
+            if (_groundMat == null) _groundMat = CreateFallback(new Color(0.18f, 0.65f, 0.35f));
+            if (_grayMat == null) _grayMat = CreateFallback(Color.gray * 0.7f);
+            if (_orangeMat == null) _orangeMat = CreateFallback(new Color(1f, 0.6f, 0f));
+
             CreateGround();
             if (createReferenceCube)
                 CreateReferenceCube();
@@ -74,11 +85,8 @@ namespace LiftingTwin.Runtime
             ground.transform.SetParent(null);
             ground.transform.localScale = new Vector3(groundSize.x / 10f, 1, groundSize.y / 10f);
 
-            if (groundMaterial != null)
-            {
-                var renderer = ground.GetComponent<MeshRenderer>();
-                renderer.material = groundMaterial;
-            }
+            var renderer = ground.GetComponent<MeshRenderer>();
+            renderer.material = groundMaterial != null ? groundMaterial : _groundMat;
 
             Log.Debug("Runtime", "SceneInitializer: 创建地面 {0}x{1}", groundSize.x, groundSize.y);
         }
@@ -113,9 +121,8 @@ namespace LiftingTwin.Runtime
             pillar.transform.position = position;
             pillar.transform.localScale = new Vector3(0.2f, 0.25f, 0.2f);
 
-            // 降低亮度方便视觉区分
             var renderer = pillar.GetComponent<MeshRenderer>();
-            renderer.material.color = Color.gray * 0.7f;
+            renderer.material = _grayMat;
         }
 
         private void CreateGridHelper()
@@ -125,6 +132,14 @@ namespace LiftingTwin.Runtime
             var grid = gridGo.AddComponent<GridDebug>();
             grid.gridSize = gridSize;
             grid.gridSpacing = gridSpacing;
+        }
+
+        private static Material CreateFallback(Color color)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var mat = new Material(shader);
+            mat.color = color;
+            return mat;
         }
 
         /// <summary>
@@ -159,14 +174,7 @@ namespace LiftingTwin.Runtime
                 .AddTower(meshView, towerId, towerFrame)
                 .AddCrane(meshView, craneChassisId, craneBoomId, craneHookId);
 
-            // 4. 点云测试（旋转的彩色球体，放在起重机附近）
-            var pcGo = new GameObject("PointCloud (Test)");
-            pcGo.transform.SetParent(transform);
-            pcGo.transform.localPosition = new Vector3(-4, 2, -2);
-            var pcView = pcGo.AddComponent<PointCloudView>();
-            pcGo.AddComponent<PointCloudTestController>().targetView = pcView;
-
-            Log.Info("Runtime", "SceneInitializer: 创建测试场景（输电塔 + 起重机 + 点云）");
+            Log.Info("Runtime", "SceneInitializer: 创建测试场景（输电塔 + 起重机）");
         }
 
         /// <summary>
