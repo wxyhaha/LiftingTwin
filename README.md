@@ -6,7 +6,8 @@
 
 LiftingTwin 是一个面向输变电工程吊装作业的数字孪生三维可视化验证平台。
 
-Unity 端仅负责**桌面端三维可视化渲染**，不负责任何算法。
+- **Unity 端**：桌面端三维可视化渲染，接收实时数据动态更新 Mesh、PointCloud 等
+- **Qt 端**：桌面外壳应用，工具栏 + 三维场景 + 状态栏一体化界面，通过 Win32 HWND 嵌入 Unity
 
 算法团队通过实时数据通道向 Unity 推送 Mesh、PointCloud、Pose 等数据，Unity 负责动态更新显示。
 
@@ -17,11 +18,13 @@ Unity 端仅负责**桌面端三维可视化渲染**，不负责任何算法。
 | Unity | 2022.3.62f3 LTS |
 | 渲染管线 | Universal Render Pipeline (URP) |
 | 目标平台 | Windows Desktop (Standalone) |
-| 语言 | C# |
+| 语言 | C# (Unity) / C++17, QML (Qt) |
+| Qt 版本 | Qt 6.5.3 (msvc2019_64) |
+| Qt 构建 | CMake + MSBuild (Visual Studio 2022) |
 | 版本控制 | Git |
-| AI 辅助 | Codex, DeepSeek V4, Claude, Cursor 等 |
+| AI 辅助 | Claude, Cursor, DeepSeek V4 等 |
 
-**关键 Package：**
+**关键 Unity Package：**
 
 - `com.unity.render-pipelines.universal` — URP 渲染管线
 - `com.unity.textmeshpro` — 文字渲染
@@ -30,61 +33,132 @@ Unity 端仅负责**桌面端三维可视化渲染**，不负责任何算法。
 ## 目录说明
 
 ```
-Assets/
-├── _Config/           配置资产（ScriptableObject 实例）
-├── _Scenes/           场景文件
-├── Art/               美术资源
-│   ├── Materials/     材质
-│   ├── Shaders/       自定义 Shader（HLSL / Shader Graph）
-│   └── Textures/      贴图
-├── Plugins/           平台原生插件（.dll / .a / .so）
-├── Prefabs/           预制体
-├── Resources/         Runtime 动态加载资源（谨慎使用）
-├── Scripts/           所有 C# 代码
-│   ├── Core/          应用入口、生命周期、配置
-│   ├── Runtime/       主循环、帧同步、数据调度
-│   ├── Mesh/          Mesh 动态更新
-│   ├── PointCloud/    点云显示
-│   ├── Network/       WebSocket / TCP 数据接收
-│   ├── Visualization/ 相机控制、渲染辅助、后处理
-│   └── Utils/         日志、扩展方法、数学工具
-├── StreamingAssets/   原始文件（按原样复制到构建）
-├── ThirdParty/        第三方源码
-└── UI/                UI 相关资产（UGUI / UI Toolkit）
+LiftingTwin/
+├── Assets/
+│   ├── _Config/             配置资产（ScriptableObject 实例）
+│   ├── _Scenes/             场景文件
+│   ├── Art/                 美术资源
+│   │   ├── Materials/       材质
+│   │   ├── Shaders/         自定义 Shader（HLSL / Shader Graph）
+│   │   └── Textures/        贴图
+│   ├── Editor/              编辑器扩展脚本
+│   │   └── CreateMaterials.cs   创建 Runtime 材质球菜单
+│   ├── Plugins/             平台原生插件（.dll / .a / .so）
+│   ├── Prefabs/             预制体
+│   ├── Resources/           Runtime 动态加载资源
+│   │   ├── Mat_Ground.mat   地面材质 (URP/Lit)
+│   │   ├── Mat_Gray.mat     灰色材质
+│   │   ├── Mat_Orange.mat   橙色材质
+│   │   └── Mat_Steel.mat    钢色材质（Mesh 默认）
+│   ├── Scripts/             所有 C# 代码
+│   │   ├── Core/            应用入口、生命周期、配置
+│   │   ├── Runtime/         场景初始化、测试动画
+│   │   ├── Mesh/            Mesh 动态更新
+│   │   ├── PointCloud/      点云显示
+│   │   ├── Network/         WebSocket / TCP 数据接收（预留）
+│   │   ├── Visualization/   相机控制、渲染辅助
+│   │   ├── UI/              UGUI 信息面板、选中系统
+│   │   └── Utils/           日志、扩展方法
+│   ├── StreamingAssets/     原始文件（按原样复制到构建）
+│   ├── ThirdParty/          第三方源码
+│   └── UI/                  UI 相关资产
+├── QtUI/                    Qt 桌面外壳应用
+│   ├── main.cpp             Qt 入口 + Unity 窗口嵌入
+│   ├── qml/                 QML 界面
+│   │   └── main.qml         主布局（顶部工具栏 + Unity 3D 场景 + 底部状态栏）
+│   ├── qml.qrc              QML 资源配置
+│   ├── CMakeLists.txt       构建配置
+│   └── build3/              构建输出目录
+└── ProjectSettings/         Unity 项目设置
 ```
 
-## 开发流程
+## 系统架构
 
-### 环境准备
+```
+┌─────────────────────────────────────────────────────┐
+│                   Qt 桌面外壳                        │
+│  ┌───────────┐ ┌────────────────────┐ ┌──────────┐ │
+│  │ 顶部工具栏  │ │  Unity 3D 场景窗口  │ │ 状态栏    │ │
+│  │  (QML)    │ │  (Win32 HWND 嵌入) │ │  (QML)   │ │
+│  └───────────┘ └────────────────────┘ └──────────┘ │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                 Unity Standalone                     │
+│  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌─────────┐  │
+│  │ 地面/  │ │ Mesh渲染  │ │ 点云渲染  │ │ 信息面板 │  │
+│  │ 参考物  │ │ (动态网格) │ │ (GL点)   │ │ (UGUI)  │  │
+│  └────────┘ └──────────┘ └──────────┘ └─────────┘  │
+└─────────────────────────────────────────────────────┘
+```
 
-1. 安装 Unity Hub
-2. 通过 Unity Hub 安装 **Unity 2022.3.62f3 LTS**（务必精确版本）
-3. Clone 本项目
-4. 在 Unity Hub 中 Add Project，选择本仓库根目录
-5. Unity 会自动下载 Package 依赖
+## 已实现功能
 
-### 日常开发
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| 工程初始化 | ✅ 完成 | 项目目录、配置、规范 |
+| Unity 场景 | ✅ 完成 | 地面 + 参考物体 + 辅助网格 |
+| 相机控制 | ✅ 完成 | 鼠标拖拽旋转/平移/滚轮缩放 |
+| Mesh 动态更新 | ✅ 完成 | DynamicMesh + MeshManager |
+| 点云渲染 | ✅ 完成 | PointCloudView + GL 渲染 |
+| Qt 桌面外壳 | ✅ 完成 | QML 布局 + Unity 窗口嵌入 |
+| UGUI 信息面板 | ✅ 完成 | 对象/帧率/日志显示 |
+| 选中交互 | ✅ 完成 | 射线检测 MeshCollider 选中 |
+| 测试场景 | ✅ 完成 | 输电塔(风致摇摆) + 起重机(底盘/吊臂/吊钩) |
+| WebSocket 网络层 | 🔲 待开始 | 实时数据接收 |
+| 完整数据协议对接 | 🔲 待开始 | 协议定义 + 解析 + 调度 |
+| URP 材质 Build | ✅ 完成 | Resources 加载 + 回退创建 |
 
-1. 拉取最新 `main`
-2. 基于 `main` 创建 feature 分支：`feature/<模块>/<简述>`
-3. 开发 + 自测
-4. 提交 PR 到 `main`
+## 构建指南
 
-### 构建
+### Unity 构建
 
-- File > Build Settings > Target Platform: Windows, Mac, Linux (Standalone)
-- Architecture: Intel 64-bit
-- Build
+1. 在 Unity Editor 中打开项目
+2. 运行菜单 **Tools → Create Runtime Materials**（确保 Resources 材质已生成）
+3. 检查 **Project Settings → Graphics → Always Included Shaders**：
+   - 确认 `Universal Render Pipeline/Lit` **不在**列表中（变体过多会导致构建失败）
+   - 保留默认的 URP shader 列表即可
+4. **File → Build Settings**：
+   - Target Platform: **Windows, Mac, Linux (Standalone)**
+   - Architecture: **Intel 64-bit**
+   - 勾选 **Development Build**（调试用）
+5. 点击 **Build**，输出到 `Build/Windows/`
 
-## Git 规范
+### Qt 桌面外壳构建
 
-### 分支策略
+```bash
+# 使用 CMake + MSBuild 构建
+cd QtUI
+cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+```
+
+构建产物：`build/Release/appLiftingTwinUI.exe`
+
+启动方式：直接运行 `appLiftingTwinUI.exe`，它会自动查找并启动 `Build/Windows/LiftingTwin.exe`，嵌入到界面中心区域。
+
+### Unity 材质系统说明
+
+构建后材质粉色（品红）问题的解决方案：
+
+- URP Lit Shader 有 130 万+ 变体，无法加入 Always Included Shaders
+- 改用 `Resources.Load<Material>()` 在 Start 时加载材质球
+- 材质球文件存放在 `Assets/Resources/`，构建时自动包含
+- 回退机制：`Resources.Load` 失败时通过 `Shader.Find` + `new Material` 动态创建
+- 编辑器脚本 `CreateMaterials.cs` 提供一键生成材质球功能
+
+## 开发规范
+
+### Git 规范
+
+#### 分支策略
 
 - `main` — 稳定主线，只通过 PR 合入
-- `feature/<模块>/<简述>` — 功能分支，例如 `feature/mesh/dynamic-update`
+- `feature/<模块>/<简述>` — 功能分支
 - `fix/<简述>` — 修复分支
 
-### Commit 规范
+#### Commit 规范
 
 ```
 <type>: <简短描述>
@@ -110,6 +184,7 @@ chore: Initialize project directory structure
 - `.meta` 文件必须全部纳入版本控制
 - Library/、Temp/、Build/ 等已在 .gitignore 排除
 - 不要提交 `UserSettings/`
+- Qt 构建产物 (`QtUI/build*`, `QtUI/bin/`) 已在 .gitignore 排除
 
 ## AI 使用说明
 
@@ -117,10 +192,9 @@ chore: Initialize project directory structure
 
 ### 可用的 AI 工具
 
-- **Codex** (OpenAI) — 代码补全
-- **DeepSeek V4** — 代码生成、重构
-- **Claude** (Claude Code / Cursor) — 复杂任务、架构设计
+- **Claude** (Claude Code) — 架构设计、代码生成、重构
 - **Cursor** — Agent 模式
+- **DeepSeek V4** — 代码生成、问答
 
 ### AI 使用约定
 
@@ -129,28 +203,6 @@ chore: Initialize project directory structure
 3. AI 生成代码的注释语言：统一使用**中文**
 4. 标识符（类名、方法名、变量名）使用**英文**
 5. 涉及架构决策时，AI 应给出推荐方案和理由，由开发者最终决定
-
-### AI 使用示例
-
-```
-// 在 AGENTS.md 约束下，AI 可以：
-- 生成符合规范的 C# 脚本
-- 生成 Git Commit Message
-- 解释现有代码逻辑
-- 提出重构建议
-```
-
-## 后续开发计划
-
-| 阶段 | 内容 | 状态 |
-|------|------|------|
-| 1 | 工程初始化（目录、配置、规范） | ✅ 当前 |
-| 2 | 相机控制系统 | 🔲 待开始 |
-| 3 | WebSocket / TCP 网络层 | 🔲 待开始 |
-| 4 | Mesh 动态更新渲染 | 🔲 待开始 |
-| 5 | PointCloud 点云显示 | 🔲 待开始 |
-| 6 | 完整数据协议对接 | 🔲 待开始 |
-| 7 | UI 面板（数据监控、调试面板） | 🔲 待开始 |
 
 ---
 
