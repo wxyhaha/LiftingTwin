@@ -21,20 +21,6 @@ qt_add_qml_module(appLiftingTwinUI
     VERSION 1.0
     QML_FILES
         qml/main.qml
-        qml/components/TopBar.qml
-        qml/components/LeftPanel.qml
-        qml/components/CenterView.qml
-        qml/components/RightPanel.qml
-        qml/components/BottomPanel.qml
-        qml/components/StatusCard.qml
-        qml/components/AlarmList.qml
-        qml/components/EventTable.qml
-        qml/components/CraneStatus.qml
-        qml/components/RiskPanel.qml
-        qml/components/SensorStatus.qml
-        qml/components/PersonnelList.qml
-        qml/components/ModelLayers.qml
-        qml/components/EquipmentList.qml
 )
 
 target_link_libraries(appLiftingTwinUI PRIVATE Qt6::Quick Qt6::Network)

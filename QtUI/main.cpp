@@ -37,64 +37,34 @@ public:
         }
 
         m_container = container;
+
+        // 立即尝试获取 winId（窗口若已显示）
         m_containerWinId = container->window() ? container->window()->winId() : 0;
 
-#ifdef Q_OS_WIN
-        // 启动 Unity
-        QString unityPath = findUnityPath();
-        if (unityPath.isEmpty()) {
-            qWarning() << "[UnityEmbed] Unity exe not found";
-            return;
+        // 窗口未显示时，等 visibleChanged 再获取
+        if (m_containerWinId == 0 && container->window()) {
+            connect(container->window(), &QQuickWindow::visibleChanged, this, [this](bool) {
+                if (!m_container) return;
+                QWindow *win = m_container->window();
+                if (!win) return;
+                m_containerWinId = win->winId();
+            });
         }
 
-        qInfo() << "[UnityEmbed] Starting Unity from:" << unityPath;
-        m_process = new QProcess(this);
-        m_process->setWorkingDirectory(QFileInfo(unityPath).absolutePath());
-        m_process->start(unityPath, QStringList());
-
-        if (!m_process->waitForStarted(5000)) {
-            qWarning() << "[UnityEmbed] Failed to start Unity";
-            delete m_process;
-            m_process = nullptr;
-            return;
-        }
-
-        qInfo() << "[UnityEmbed] Unity started, PID:" << m_process->processId();
-
-        // 轮询查找 Unity 窗口并嵌入
-        m_embedAttempts = 0;
-        QTimer *pollTimer = new QTimer(this);
-        connect(pollTimer, &QTimer::timeout, this, [this, pollTimer]() {
-            m_embedAttempts++;
-            if (tryEmbed()) {
-                pollTimer->stop();
-                pollTimer->deleteLater();
-                m_resizeTimer->start();
-                syncSize();
-                qInfo() << "[UnityEmbed] Unity embedded successfully";
-            } else if (m_embedAttempts > 50) {
-                pollTimer->stop();
-                pollTimer->deleteLater();
-                qWarning() << "[UnityEmbed] Failed to find Unity window after 5s";
-            }
-        });
-        pollTimer->start(100);
-
-        // 监听进程退出
-        connect(m_process, &QProcess::finished, this, [](int exitCode) {
-            qInfo() << "[UnityEmbed] Unity process exited with code:" << exitCode;
-        });
-#else
-        qWarning() << "[UnityEmbed] Windows only";
-#endif
+        startUnityAndEmbed();
     }
 
     Q_INVOKABLE void stop() {
         m_resizeTimer->stop();
+        if (m_pollTimer) m_pollTimer->stop();
 #ifdef Q_OS_WIN
         if (m_process) {
-            m_process->kill();
-            m_process->waitForFinished(3000);
+            // 先优雅关闭，给 Unity 保存机会
+            m_process->terminate();
+            if (!m_process->waitForFinished(5000)) {
+                m_process->kill();
+                m_process->waitForFinished(3000);
+            }
             delete m_process;
             m_process = nullptr;
         }
@@ -125,6 +95,50 @@ private slots:
 
 private:
 #ifdef Q_OS_WIN
+    void startUnityAndEmbed() {
+        QString unityPath = findUnityPath();
+        if (unityPath.isEmpty()) {
+            qWarning() << "[UnityEmbed] Unity exe not found";
+            return;
+        }
+
+        qInfo() << "[UnityEmbed] Starting Unity from:" << unityPath;
+        m_process = new QProcess(this);
+        m_process->setWorkingDirectory(QFileInfo(unityPath).absolutePath());
+        m_process->start(unityPath, QStringList());
+
+        if (!m_process->waitForStarted(5000)) {
+            qWarning() << "[UnityEmbed] Failed to start Unity";
+            delete m_process;
+            m_process = nullptr;
+            return;
+        }
+
+        qInfo() << "[UnityEmbed] Unity started, PID:" << m_process->processId();
+
+        // 轮询查找 Unity 窗口并嵌入
+        m_embedAttempts = 0;
+        m_pollTimer = new QTimer(this);
+        connect(m_pollTimer, &QTimer::timeout, this, [this]() {
+            m_embedAttempts++;
+            if (tryEmbed()) {
+                m_pollTimer->stop();
+                m_resizeTimer->start();
+                syncSize();
+                qInfo() << "[UnityEmbed] Unity embedded successfully";
+            } else if (m_embedAttempts > 50) {
+                m_pollTimer->stop();
+                qWarning() << "[UnityEmbed] Failed to find Unity window after 5s";
+            }
+        });
+        m_pollTimer->start(100);
+
+        // 监听进程退出
+        connect(m_process, &QProcess::finished, this, [](int exitCode) {
+            qInfo() << "[UnityEmbed] Unity process exited with code:" << exitCode;
+        });
+    }
+
     QString findUnityPath() {
         // 按优先级查找 Unity 可执行文件
         QString appDir = QCoreApplication::applicationDirPath();
@@ -190,6 +204,7 @@ private:
     HWND m_unityHwnd = nullptr;
     qint64 m_containerWinId = 0;
     int m_embedAttempts = 0;
+    QTimer *m_pollTimer = nullptr;
 #endif
 
     QProcess *m_process = nullptr;
@@ -214,9 +229,8 @@ int main(int argc, char *argv[])
     QtRosBridge rosBridge;
     engine.rootContext()->setContextProperty("rosBridge", &rosBridge);
 
-    // 直接从文件系统加载 QML
-    QUrl url = QUrl::fromLocalFile("c:/Users/Administrator/Documents/unity/LiftingTwin/QtUI/qml/main.qml");
-    qInfo() << "Loading QML from:" << url.toString();
+    // 通过 QML 模块 URI 加载（QML 文件由 cmake 的资源系统管理）
+    engine.loadFromModule("LiftingTwin", "Main");
 
     QObject::connect(&engine, &QQmlApplicationEngine::warnings,
         [](const QList<QQmlError> &warnings) {
@@ -225,7 +239,7 @@ int main(int argc, char *argv[])
             }
         });
 
-    engine.load(url);
+    engine.loadFromModule("LiftingTwin", "Main");
 
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "Failed to load QML - no root objects";

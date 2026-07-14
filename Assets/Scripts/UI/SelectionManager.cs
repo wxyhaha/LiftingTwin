@@ -175,12 +175,12 @@ namespace LiftingTwin.UI
 
             // 保存原始 color（防止多次选中时覆盖）
             _selectedRenderer.GetPropertyBlock(_highlightBlock);
-            var baseColor = _highlightBlock.HasProperty(Shader.PropertyToID("_Color"))
-                ? _highlightBlock.GetColor(Shader.PropertyToID("_Color"))
+            var baseColor = _highlightBlock.HasProperty(Shader.PropertyToID("_BaseColor"))
+                ? _highlightBlock.GetColor(Shader.PropertyToID("_BaseColor"))
                 : Color.white;
 
             // 设置高亮颜色
-            _highlightBlock.SetColor(Shader.PropertyToID("_Color"), highlightColor * highlightIntensity);
+            _highlightBlock.SetColor(Shader.PropertyToID("_BaseColor"), highlightColor * highlightIntensity);
             _selectedRenderer.SetPropertyBlock(_highlightBlock);
         }
 

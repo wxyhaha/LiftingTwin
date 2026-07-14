@@ -14,9 +14,13 @@ public:
     explicit QtRosBridge(QObject *parent = nullptr)
         : QObject(parent), m_socket(new QTcpSocket(this)), m_reconnectTimer(new QTimer(this))
     {
+        // 启用 TCP keepalive，检测静默断开
+        m_socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+
         connect(m_socket, &QTcpSocket::readyRead, this, &QtRosBridge::onReadyRead);
         connect(m_socket, &QTcpSocket::connected, this, [this]() {
             qInfo() << "[RosBridge] 已连接到 Unity";
+            m_recvBuf.clear(); // 清空旧连接的残留数据
             emit connectedChanged();
             m_reconnectTimer->stop();
         });
@@ -25,9 +29,7 @@ public:
             emit connectedChanged();
             m_reconnectTimer->start();
         });
-        // 使用旧式语法连接 error 信号（避免 QOverload 歧义）
-        connect(m_socket, SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
-                this, SLOT(onError(QAbstractSocket::SocketError)));
+        connect(m_socket, &QTcpSocket::errorOccurred, this, &QtRosBridge::onError);
 
         m_reconnectTimer->setInterval(5000);
         connect(m_reconnectTimer, &QTimer::timeout, this, [this]() { connectToUnity(); });
@@ -80,7 +82,6 @@ private:
         if (m_socket->state() != QAbstractSocket::ConnectedState) return;
         QByteArray data = QJsonDocument(obj).toJson(QJsonDocument::Compact) + "\n";
         m_socket->write(data);
-        m_socket->flush();
     }
 
     void onReadyRead() {
