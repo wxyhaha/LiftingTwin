@@ -53,6 +53,21 @@ ApplicationWindow {
             Text { text: "项目名称：500kV变电站扩建工程"; font.pixelSize: 11; color: clrTxtSub }
             Text { text: "当前作业状态：<font color='" + clrGreen + "'>● <b>吊装作业进行中</b></font>"; font.pixelSize: 11 }
 
+            // ROS2 连接状态
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+                Rectangle {
+                    width: 8; height: 8; radius: 4
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: rosBridge.connected ? clrGreen : clrRed
+                }
+                Text {
+                    text: rosBridge.connected ? "ROS2 已连接" : "ROS2 未连接"
+                    font.pixelSize: 11; color: clrTxtSub
+                }
+            }
+
             // 右侧风险等级标识
             Row {
                 anchors.right: parent.right
@@ -228,7 +243,21 @@ ApplicationWindow {
                     }
                 }
 
-                // (4) 迷你雷达/小地图
+                // (4) ROS2 消息显示
+                Text { text: "▼ ROS2 实时消息"; font.pixelSize: 12; font.bold: true; color: clrThemeNavy }
+                Rectangle {
+                    width: parent.width; height: 50; color: "#f0f7ff"; border.color: clrBorder; radius: 4
+                    Text {
+                        id: rosMessageText
+                        text: "等待消息..."
+                        font.pixelSize: 12; color: clrBlue
+                        anchors.centerIn: parent
+                        wrapMode: Text.WordWrap
+                        width: parent.width - 20
+                    }
+                }
+
+                // (5) 迷你雷达/小地图
                 Rectangle {
                     width: parent.width; height: 90; color: "#f0f7ff"; border.color: clrBorder; radius: 4
                     Text { text: "🎯 [ 厂区小地图全局网格及雷达联动位置 ]"; font.pixelSize: 11; color: clrBlue; anchors.centerIn: parent }
@@ -279,6 +308,25 @@ ApplicationWindow {
                     unityEmbed.embed(this)
                 }
             }
+        }
+    }
+
+    // ═══ 启动时自动连接 Unity ROS 桥 ═══
+    Component.onCompleted: {
+        rosBridge.connectToUnity(9000)
+    }
+
+    Connections {
+        target: rosBridge
+        onConnectedChanged: {
+            console.log("ROS bridge connected:", rosBridge.connected)
+            if (rosBridge.connected) {
+                rosBridge.subscribe("/unity_test")
+            }
+        }
+        onMessageReceived: function(topic, data) {
+            console.log("ROS msg:", topic, data)
+            rosMessageText.text = topic + ": " + data
         }
     }
 

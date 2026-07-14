@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5633536808460983443}
   - component: {fileID: 8314318346148695143}
+  - component: {fileID: 9065483721}
+  - component: {fileID: 9065483722}
   m_Layer: 0
   m_Name: ROSConnectionPrefab
   m_TagString: Untagged
@@ -54,3 +56,28 @@ MonoBehaviour:
   m_TFTopics:
   - /tf
   listenForTFMessages: 1
+--- !u!114 &9065483721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4543193461086824551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29871fe6903f1c34f95a3e0a32547a4c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  listenPort: 9000
+--- !u!114 &9065483722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4543193461086824551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ba22d2026738d4448717b6c20e607f6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:

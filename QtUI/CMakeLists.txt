@@ -7,12 +7,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick Network)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
 qt_add_executable(appLiftingTwinUI
     main.cpp
+    QtRosBridge.h
 )
 
 qt_add_qml_module(appLiftingTwinUI
@@ -36,4 +37,4 @@ qt_add_qml_module(appLiftingTwinUI
         qml/components/EquipmentList.qml
 )
 
-target_link_libraries(appLiftingTwinUI PRIVATE Qt6::Quick)
+target_link_libraries(appLiftingTwinUI PRIVATE Qt6::Quick Qt6::Network)

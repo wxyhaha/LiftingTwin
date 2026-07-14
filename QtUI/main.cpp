@@ -9,6 +9,7 @@
 #include <QWindow>
 #include <QDir>
 #include <QStandardPaths>
+#include "QtRosBridge.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -208,6 +209,10 @@ int main(int argc, char *argv[])
     // 注册 UnityEmbed 到 QML
     UnityEmbed unityEmbed;
     engine.rootContext()->setContextProperty("unityEmbed", &unityEmbed);
+
+    // 注册 QtRosBridge 到 QML
+    QtRosBridge rosBridge;
+    engine.rootContext()->setContextProperty("rosBridge", &rosBridge);
 
     // 直接从文件系统加载 QML
     QUrl url = QUrl::fromLocalFile("c:/Users/Administrator/Documents/unity/LiftingTwin/QtUI/qml/main.qml");
