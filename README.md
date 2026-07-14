@@ -55,7 +55,7 @@ LiftingTwin/
 │   │   ├── Runtime/         场景初始化、测试动画
 │   │   ├── Mesh/            Mesh 动态更新
 │   │   ├── PointCloud/      点云显示
-│   │   ├── Network/         WebSocket / TCP 数据接收（预留）
+│   │   ├── Network/         QtBridge (IPC 服务器), WebSocket（预留）
 │   │   ├── Visualization/   相机控制、渲染辅助
 │   │   ├── UI/              UGUI 信息面板、选中系统
 │   │   └── Utils/           日志、扩展方法
@@ -63,12 +63,13 @@ LiftingTwin/
 │   ├── ThirdParty/          第三方源码
 │   └── UI/                  UI 相关资产
 ├── QtUI/                    Qt 桌面外壳应用
-│   ├── main.cpp             Qt 入口 + Unity 窗口嵌入
+│   ├── main.cpp             Qt 入口 + Unity 窗口嵌入 + ROS 桥
+│   ├── QtRosBridge.h        ROS 桥接 C++ 客户端（暴露给 QML）
 │   ├── qml/                 QML 界面
 │   │   └── main.qml         主布局（顶部工具栏 + Unity 3D 场景 + 底部状态栏）
 │   ├── qml.qrc              QML 资源配置
 │   ├── CMakeLists.txt       构建配置
-│   └── build3/              构建输出目录
+│   └── build4/              构建输出目录
 └── ProjectSettings/         Unity 项目设置
 ```
 
@@ -106,6 +107,8 @@ LiftingTwin/
 | UGUI 信息面板 | ✅ 完成 | 对象/帧率/日志显示 |
 | 选中交互 | ✅ 完成 | 射线检测 MeshCollider 选中 |
 | 测试场景 | ✅ 完成 | 输电塔(风致摇摆) + 起重机(底盘/吊臂/吊钩) |
+| ROS2 通信 | ✅ 完成 | Unity ROS-TCP-Connector ↔ ROS-TCP-Endpoint (WSL) |
+| Qt ↔ Unity IPC 桥接 | ✅ 完成 | Qt 通过 TCP localhost:9000 控制 Unity 发布/订阅 ROS2 |
 | WebSocket 网络层 | 🔲 待开始 | 实时数据接收 |
 | 完整数据协议对接 | 🔲 待开始 | 协议定义 + 解析 + 调度 |
 | URP 材质 Build | ✅ 完成 | Resources 加载 + 回退创建 |
@@ -130,13 +133,55 @@ LiftingTwin/
 ```bash
 # 使用 CMake + MSBuild 构建
 cd QtUI
-cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="C:\Qt\6.5.3\msvc2019_64"
 cmake --build build --config Release
 ```
 
 构建产物：`build/Release/appLiftingTwinUI.exe`
 
 启动方式：直接运行 `appLiftingTwinUI.exe`，它会自动查找并启动 `Build/Windows/LiftingTwin.exe`，嵌入到界面中心区域。
+
+### ROS2 通信配置
+
+Unity Editor Play Mode 下测试 ROS2 通信：
+
+1. **WSL 端**：确保 ROS-TCP-Endpoint 在运行
+   ```bash
+   source /opt/ros/humble/setup.bash
+   ros2 run ros_tcp_endpoint default_server_endpoint \
+     --ros-args -p ROS_IP:=0.0.0.0 -p ROS_TCP_PORT:=10000
+   ```
+
+2. **Unity 端**：菜单 **Robotics → ROS Settings**
+   - **Protocol** → `ROS2`（首次切换会触发重新编译）
+   - **ROS IP Address** → `127.0.0.1`
+   - **ROS Port** → `10000`
+   - 点击 Play，左上角 HUD **蓝色箭头** = 连接成功
+
+3. **测试发送消息**（WSL 终端）：
+   ```bash
+   ros2 topic pub /unity_test std_msgs/String "data: hello" --once
+   ```
+   Unity 右上角显示消息，Console 输出 `[ROS2 收到消息]`
+
+### Qt ↔ Unity IPC 桥接
+
+Qt 外壳通过 TCP `localhost:9000` 与 Unity 通信，Unity 转发到 ROS2。
+
+```
+Qt (QML)  → TCP :9000 → Unity QtBridge → ROSConnection → ROS2 (WSL)
+```
+
+- Unity 侧：`Assets/Scripts/Network/QtBridge.cs`（TCP 服务器，监听 9000）
+- Qt 侧：`QtUI/QtRosBridge.h`（C++ TCP 客户端，暴露给 QML）
+- QML 中通过 `rosBridge` 对象调用：`publishString(topic, data)`、`subscribe(topic)`、`unsubscribe(topic)`
+
+**启动顺序：**
+1. WSL：启动 ROS-TCP-Endpoint
+2. Unity：Play
+3. Qt：运行 `appLiftingTwinUI.exe`（自动连接 Unity 和 ROS2）
+
+> **如果 Unity 重新导入或删除过 ROSConnectionPrefab**，需要重新在场景中拖入 `Assets/Resources/ROSConnectionPrefab.prefab`，或检查场景中是否包含该预制体实例。`QtBridge` 和 `RosSubscriberTest` 组件已内置在预制体中，无需手动添加。
 
 ### Unity 材质系统说明
 
