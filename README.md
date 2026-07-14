@@ -70,6 +70,8 @@ LiftingTwin/
 │   ├── qml.qrc              QML 资源配置
 │   ├── CMakeLists.txt       构建配置
 │   └── build4/              构建输出目录
+├── docs/                    文档
+│   └── ros2-setup-guide.md  ROS2 环境搭建与调试指南
 └── ProjectSettings/         Unity 项目设置
 ```
 
@@ -140,6 +142,15 @@ cmake --build build --config Release
 构建产物：`build/Release/appLiftingTwinUI.exe`
 
 启动方式：直接运行 `appLiftingTwinUI.exe`，它会自动查找并启动 `Build/Windows/LiftingTwin.exe`，嵌入到界面中心区域。
+
+### ROS2 环境搭建
+
+完整步骤参考 [`docs/ros2-setup-guide.md`](docs/ros2-setup-guide.md)，包括：
+
+- WSL Ubuntu-22.04 + ROS2 Humble 安装
+- ROS-TCP-Endpoint 构建与启动
+- Unity ROS-TCP-Connector 配置
+- 测试命令、调试技巧、常见问题
 
 ### ROS2 通信配置
 
