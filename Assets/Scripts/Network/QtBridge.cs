@@ -50,7 +50,7 @@ public class QtBridge : MonoBehaviour
 
     void Update()
     {
-        // 主线程：发队列 → 网络
+        // 主线程：发队列 → 网络（唯一发送通道，避免竞态）
         while (m_SendQueue.TryDequeue(out string json))
         {
             Send(json);
@@ -100,12 +100,7 @@ public class QtBridge : MonoBehaviour
 
                 Debug.Log("[QtBridge] Qt 已连接");
 
-                // 发送输出队列中的数据
-                var sendThread = new Thread(() => SendLoop(token));
-                sendThread.IsBackground = true;
-                sendThread.Start();
-
-                // 接收循环
+                // 接收循环（发送统一由主线程 Update 处理）
                 RecvLoop(token);
             }
             catch (OperationCanceledException) { break; }
@@ -178,7 +173,11 @@ public class QtBridge : MonoBehaviour
             byte[] data = Encoding.UTF8.GetBytes(json + "\n");
             s.Write(data, 0, data.Length);
         }
-        catch { }
+        catch
+        {
+            // 写入失败，清空队列止损
+            while (m_SendQueue.TryDequeue(out _)) { }
+        }
     }
 
     // ── 命令处理 ───────────────────────────────────────────────
