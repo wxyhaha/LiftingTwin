@@ -54,6 +54,30 @@ namespace LiftingTwin.Utils
 
         #region Public API
 
+        /// <summary>Debug-level log（单消息快捷方式）</summary>
+        public static void Debug(string message)
+        {
+            Emit("", LogLevel.Debug, message);
+        }
+
+        /// <summary>Info-level log（单消息快捷方式）</summary>
+        public static void Info(string message)
+        {
+            Emit("", LogLevel.Info, message);
+        }
+
+        /// <summary>Warn-level log（单消息快捷方式）</summary>
+        public static void Warn(string message)
+        {
+            Emit("", LogLevel.Warn, message);
+        }
+
+        /// <summary>Error-level log（单消息快捷方式）</summary>
+        public static void Error(string message)
+        {
+            Emit("", LogLevel.Error, message);
+        }
+
         /// <summary>
         /// Debug-level log. For development-only diagnostics.
         /// Suppressed in builds by default.

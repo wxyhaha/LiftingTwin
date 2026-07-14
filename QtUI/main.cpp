@@ -229,8 +229,13 @@ int main(int argc, char *argv[])
     QtRosBridge rosBridge;
     engine.rootContext()->setContextProperty("rosBridge", &rosBridge);
 
-    // 通过 QML 模块 URI 加载（QML 文件由 cmake 的资源系统管理）
-    engine.loadFromModule("LiftingTwin", "Main");
+    // 通过 CMake 资源系统或文件系统加载 QML
+    const QString localQml = QCoreApplication::applicationDirPath() + "/LiftingTwin/qml/main.qml";
+    if (QFileInfo::exists(localQml)) {
+        engine.load(QUrl::fromLocalFile(localQml));
+    } else {
+        engine.loadFromModule("LiftingTwin", "main");
+    }
 
     QObject::connect(&engine, &QQmlApplicationEngine::warnings,
         [](const QList<QQmlError> &warnings) {
@@ -238,8 +243,6 @@ int main(int argc, char *argv[])
                 qWarning() << "QML Warning:" << warning.toString();
             }
         });
-
-    engine.loadFromModule("LiftingTwin", "Main");
 
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "Failed to load QML - no root objects";
