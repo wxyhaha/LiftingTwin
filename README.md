@@ -217,7 +217,10 @@ Qt (QML)  → TCP :9000 → Unity QtBridge → ROSConnection → ROS2 (WSL)
 #### Commit 规范
 
 ```
-<type>: <简短描述>
+<type>: <简短描述（中文）>
+
+<详细说明（中文）>
+```
 
 类型（type）：
   feat     — 新功能
@@ -225,15 +228,17 @@ Qt (QML)  → TCP :9000 → Unity QtBridge → ROSConnection → ROS2 (WSL)
   refactor — 重构（不改变行为）
   chore    — 工程配置、目录结构等
   docs     — 文档
-```
 
 示例：
 
 ```
-feat: Add point cloud PLY parser
-fix: Fix mesh vertex buffer overflow on large models
-chore: Initialize project directory structure
+feat: 添加点云 PLY 解析器
+fix: 修复大模型顶点缓冲区溢出问题
+chore: 初始化项目目录结构
+docs: 更新 ROS2 环境搭建文档
 ```
+
+**注意：** commit 消息全部使用中文，方便团队成员阅读。
 
 ### 注意事项
 
