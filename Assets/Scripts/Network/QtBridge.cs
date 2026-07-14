@@ -44,12 +44,18 @@ namespace LiftingTwin.Network
             }
         }
 
+        void OnApplicationQuit()
+        {
+            // Unity Standalone 退出时释放端口，防止下次启动冲突
+            OnDestroy();
+        }
+
         void OnDestroy()
         {
             _cts?.Cancel();
-            _listener?.Stop();
-            _stream?.Close();
-            _client?.Close();
+            try { _listener?.Stop(); } catch { }
+            try { _stream?.Close(); } catch { }
+            try { _client?.Close(); } catch { }
         }
 
         /// <summary>
