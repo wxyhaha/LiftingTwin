@@ -31,27 +31,25 @@ public:
     }
 
     Q_INVOKABLE void embed(QQuickItem *container) {
-        if (!container) {
-            qWarning() << "[UnityEmbed] container is null";
-            return;
-        }
-
+        if (!container) return;
         m_container = container;
 
-        // 立即尝试获取 winId（窗口若已显示）
-        m_containerWinId = container->window() ? container->window()->winId() : 0;
+        auto doStart = [this]() {
+            if (m_started) return;
+            QWindow *win = m_container ? m_container->window() : nullptr;
+            if (!win) return;
+            m_containerWinId = win->winId();
+            if (m_containerWinId == 0) return;
+            m_started = true;
+            startUnityAndEmbed();
+        };
 
-        // 窗口未显示时，等 visibleChanged 再获取
-        if (m_containerWinId == 0 && container->window()) {
-            connect(container->window(), &QQuickWindow::visibleChanged, this, [this](bool) {
-                if (!m_container) return;
-                QWindow *win = m_container->window();
-                if (!win) return;
-                m_containerWinId = win->winId();
+        if (container->window() && container->window()->isVisible())
+            doStart();
+        else
+            QObject::connect(container, &QQuickItem::windowChanged, this, [this, doStart]() {
+                if (m_container->window() && m_container->window()->isVisible()) doStart();
             });
-        }
-
-        startUnityAndEmbed();
     }
 
     Q_INVOKABLE void stop() {
@@ -74,21 +72,18 @@ public:
 private slots:
     void syncSize() {
 #ifdef Q_OS_WIN
-        if (!m_container || !m_unityHwnd) return;
+        if (!m_container || !m_unityWindow) return;
 
-        // 将 QML item 的全局坐标转换为父窗口坐标
         QPointF pos = m_container->mapToItem(nullptr, QPointF(0, 0));
-        QWindow *win = m_container->window();
-        if (!win) return;
-
         int x = static_cast<int>(pos.x());
         int y = static_cast<int>(pos.y());
         int w = static_cast<int>(m_container->width());
         int h = static_cast<int>(m_container->height());
 
-        if (w > 0 && h > 0) {
-            ::SetWindowPos(m_unityHwnd, nullptr, x, y, w, h,
-                           SWP_NOZORDER | SWP_NOACTIVATE);
+        if (w > 0 && h > 0 && (x != m_lastX || y != m_lastY || w != m_lastW || h != m_lastH)) {
+            m_unityWindow->setPosition(x, y);
+            m_unityWindow->resize(w, h);
+            m_lastX = x; m_lastY = y; m_lastW = w; m_lastH = h;
         }
 #endif
     }
@@ -189,22 +184,25 @@ private:
 
         if (!data.found) return false;
 
-        m_unityHwnd = data.found;
+        m_unityWindow = QWindow::fromWinId(reinterpret_cast<WId>(data.found));
+        if (!m_unityWindow) return false;
 
-        // 嵌入到 Qt 窗口
-        ::SetParent(m_unityHwnd, reinterpret_cast<HWND>(m_containerWinId));
+        QWindow *parentWin = m_container->window();
+        if (!parentWin) return false;
+        m_unityWindow->setParent(parentWin);
 
-        // 去掉标题栏和边框，改为子窗口样式
-        LONG style = ::GetWindowLong(m_unityHwnd, GWL_STYLE);
-        style = (style & ~WS_CAPTION & ~WS_THICKFRAME & ~WS_BORDER & ~WS_POPUP) | WS_CHILD;
-        ::SetWindowLong(m_unityHwnd, GWL_STYLE, style);
+        m_unityWindow->setPosition(m_lastX >= 0 ? m_lastX : 0, m_lastY >= 0 ? m_lastY : 0);
+
         return true;
     }
 
     HWND m_unityHwnd = nullptr;
     qint64 m_containerWinId = 0;
     int m_embedAttempts = 0;
+    int m_lastX = -1, m_lastY = -1, m_lastW = -1, m_lastH = -1;
+    bool m_started = false;
     QTimer *m_pollTimer = nullptr;
+    QWindow *m_unityWindow = nullptr;
 #endif
 
     QProcess *m_process = nullptr;

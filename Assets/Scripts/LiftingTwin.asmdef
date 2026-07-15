@@ -1,0 +1,16 @@
+{
+    "name": "LiftingTwin",
+    "rootNamespace": "LiftingTwin",
+    "references": [
+        "Unity.Robotics.ROSTCPConnector"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

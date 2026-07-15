@@ -1,3 +1,4 @@
+#if LIFTINGTWIN_HAS_ROS
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Std;
@@ -31,3 +32,4 @@ namespace LiftingTwin.Network
         }
     }
 }
+#endif

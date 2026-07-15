@@ -5,8 +5,10 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+#if LIFTINGTWIN_HAS_ROS
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Std;
+#endif
 using LiftingTwin.Utils;
 
 namespace LiftingTwin.Network
@@ -161,6 +163,7 @@ namespace LiftingTwin.Network
                 var cmd = JsonUtility.FromJson<QtCommand>(json);
                 if (cmd == null) return;
 
+#if LIFTINGTWIN_HAS_ROS
                 var ros = ROSConnection.GetOrCreateInstance();
 
                 switch (cmd.cmd)
@@ -185,6 +188,9 @@ namespace LiftingTwin.Network
                         Log.Warn("[QtBridge] 未知命令: " + cmd.cmd);
                         break;
                 }
+#else
+                Log.Warn("[QtBridge] ROS 未安装，忽略命令: " + cmd.cmd);
+#endif
             }
             catch (System.Exception e)
             {
