@@ -184,7 +184,7 @@ export MVCAM_COMMON_RUNENV=/opt/MVS/lib
 export LD_LIBRARY_PATH=/opt/MVS/lib/64:$LD_LIBRARY_PATH
 
 ~/ros_ws/install/camera_stream_server/bin/hik_camera_driver --ros-args \
-  -p width:=640 -p height:=480 -p fps:=10 \
+  -p width:=640 -p height:=480 -p fps:=30 \
   -p exposure_time:=55000 -p gain:=16.0 -p auto_exposure:="Off"
 ```
 
