@@ -184,8 +184,8 @@ export MVCAM_COMMON_RUNENV=/opt/MVS/lib
 export LD_LIBRARY_PATH=/opt/MVS/lib/64:$LD_LIBRARY_PATH
 
 ~/ros_ws/install/camera_stream_server/bin/hik_camera_driver --ros-args \
-  -p width:=640 -p height:=480 -p fps:=3 \
-  -p exposure_time:=410509 -p gain:=16.0 -p auto_exposure:="Off"
+  -p width:=640 -p height:=480 -p fps:=10 \
+  -p exposure_time:=55000 -p gain:=16.0 -p auto_exposure:="Off"
 ```
 
 **相机参数说明:**
@@ -270,13 +270,51 @@ source install/setup.bash
 
 ## 启动顺序总结
 
+### 启动顺序
 ```
-启动顺序:
-1. VMware 中: 连接 USB 相机 (可移动设备 → 连接)
-2. VM 终端 1: hik_camera_driver
-3. VM 终端 2: stream_server
+1. VMware 中: 连接 USB 相机 (可移动设备 → MV-CU013-A0UC → 连接)
+2. VM 终端 1: hik_camera_driver (相机驱动)
+3. VM 终端 2: stream_server (TCP 流服务器)
 4. Windows: appLiftingTwinUI.exe
 ```
+
+### 终端 1 — 相机驱动 (完整命令)
+```bash
+cd ~/ros_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+export MVCAM_COMMON_RUNENV=/opt/MVS/lib
+export LD_LIBRARY_PATH=/opt/MVS/lib/64:$LD_LIBRARY_PATH
+
+~/ros_ws/install/camera_stream_server/bin/hik_camera_driver --ros-args \
+  -p width:=640 -p height:=480 -p fps:=10 \
+  -p exposure_time:=55000 -p gain:=16.0
+```
+
+### 终端 2 — TCP 流服务器 (完整命令)
+```bash
+cd ~/ros_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+export MVCAM_COMMON_RUNENV=/opt/MVS/lib
+export LD_LIBRARY_PATH=/opt/MVS/lib/64:$LD_LIBRARY_PATH
+
+~/ros_ws/install/camera_stream_server/bin/stream_server --ros-args \
+  -p stream_port:=9001 -p use_compressed:=false
+```
+
+### Windows — Qt 应用启动
+```powershell
+# 如果 QML 有更新，先复制
+copy d:\studyPlace\LiftingTwin\QtUI\qml\main.qml d:\studyPlace\LiftingTwin\QtUI\build\Release\LiftingTwin\qml\main.qml
+
+# 启动
+cd d:\studyPlace\LiftingTwin\QtUI\build\Release
+.\appLiftingTwinUI.exe
+```
+
+> ⚠ 如果 Ctrl+C 停掉驱动后重开失败（`OpenDevice failed: 0x80000301`），
+> 需要 VMware 菜单 → 可移动设备 → 断开 USB 再重新连接。
 
 ### 快速启动脚本 (VM ~/ros_ws/start_camera.sh)
 
@@ -290,8 +328,8 @@ export LD_LIBRARY_PATH=/opt/MVS/lib/64:$LD_LIBRARY_PATH
 
 echo "=== Camera Driver ==="
 ~/ros_ws/install/camera_stream_server/bin/hik_camera_driver --ros-args \
-  -p width:=640 -p height:=480 -p fps:=3 \
-  -p exposure_time:=50000 -p gain:=16.0 -p auto_exposure:="Off"
+  -p width:=640 -p height:=480 -p fps:=10 \
+  -p exposure_time:=55000 -p gain:=16.0 -p auto_exposure:="Off"
 ```
 
 ```bash
