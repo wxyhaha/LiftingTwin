@@ -10,6 +10,8 @@
 #include <QDir>
 #include <QStandardPaths>
 #include "QtRosBridge.h"
+#include "CameraStreamClient.h"
+#include "CameraImageProvider.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -226,6 +228,14 @@ int main(int argc, char *argv[])
     // 注册 QtRosBridge 到 QML
     QtRosBridge rosBridge;
     engine.rootContext()->setContextProperty("rosBridge", &rosBridge);
+
+    // 注册 CameraStreamClient (相机流接收) 到 QML
+    CameraStreamClient camStream;
+    engine.rootContext()->setContextProperty("camStream", &camStream);
+    // 注册 QQuickImageProvider 供 QML 显示相机帧 (image://camerafeed/)
+    CameraImageProvider *camImageProvider = new CameraImageProvider();
+    camImageProvider->setSource(&camStream);
+    engine.addImageProvider("camerafeed", camImageProvider);
 
     // 通过 CMake 资源系统或文件系统加载 QML
     const QString localQml = QCoreApplication::applicationDirPath() + "/LiftingTwin/qml/main.qml";

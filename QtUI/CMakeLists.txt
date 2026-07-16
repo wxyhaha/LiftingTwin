@@ -14,6 +14,10 @@ qt_standard_project_setup(REQUIRES 6.5)
 qt_add_executable(appLiftingTwinUI
     main.cpp
     QtRosBridge.h
+    CameraStreamClient.h
+    CameraStreamClient.cpp
+    CameraImageProvider.h
+    CameraImageProvider.cpp
 )
 
 qt_add_qml_module(appLiftingTwinUI

@@ -206,16 +206,57 @@ ApplicationWindow {
                     }
                 }
 
-                // (2) 四路视频
-                Text { text: "▼ 视频监控画面"; font.pixelSize: 12; font.bold: true; color: clrThemeNavy }
-                Grid {
-                    columns: 2; spacing: 6; width: parent.width
-                    Repeater {
-                        model: ["监视位 01 [前向]", "监视位 02 [吊钩]", "监视位 03 [浅侧]", "监视位 04 [全景]"]
-                        Rectangle {
-                            width: 192; height: 75; color: "#1e293b"; radius: 2
-                            Text { text: modelData; font.pixelSize: 10; color: "#94a3b8"; anchors.centerIn: parent }
+                // (2) 相机实时画面 — 单路大画面
+                Text { text: "▼ 实时相机画面"; font.pixelSize: 12; font.bold: true; color: clrThemeNavy }
+
+                // 帧刷新计时器
+                Timer {
+                    id: camRefreshTimer
+                    interval: 50  // 20fps 刷新率
+                    running: true
+                    repeat: true
+                    onTriggered: camImage1.source = "image://camerafeed/live?" + Math.random()
+                }
+
+                // 海康工业相机 — 全宽显示
+                Rectangle {
+                    id: camSlot1
+                    width: parent.width
+                    height: 240
+                    color: "#1e293b"
+                    radius: 4
+                    clip: true
+
+                    Image {
+                        id: camImage1
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        cache: false
+                        visible: camStream.connected
+                    }
+
+                    // 未连接时占位
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "#801e293b"
+                        visible: !camStream.connected
+                        Text {
+                            text: "等待相机连接..."
+                            font.pixelSize: 12
+                            color: "#94a3b8"
+                            anchors.centerIn: parent
                         }
+                    }
+
+                    // 相机名称水印
+                    Text {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.margins: 6
+                        text: camStream.connected ? (camStream.cameraName + " ●") : ""
+                        font.pixelSize: 10
+                        color: "#10b981"
+                        visible: camStream.connected
                     }
                 }
 
@@ -311,9 +352,10 @@ ApplicationWindow {
         }
     }
 
-    // ═══ 启动时自动连接 Unity ROS 桥 ═══
+    // ═══ 启动时自动连接 Unity ROS 桥和相机流 ═══
     Component.onCompleted: {
         rosBridge.connectToUnity(9000)
+        camStream.connectToCamera("192.168.164.128", 9001)
     }
 
     Connections {
