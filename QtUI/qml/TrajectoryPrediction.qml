@@ -22,8 +22,6 @@ ApplicationWindow {
     title: "短时轨迹预测"
 
     Component.onCompleted: {
-        FluApp.init(root)
-        root.show(); root.raise(); root.requestActivate()
         FluTheme.primaryColor = "#01469a"
     }
 

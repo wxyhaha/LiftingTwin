@@ -19,8 +19,6 @@ ApplicationWindow {
 
     // 主题：浅色 + 深蓝主色（贴合参考设计图）
     Component.onCompleted: {
-        FluApp.init(root)
-        root.show(); root.raise(); root.requestActivate()
         FluTheme.primaryColor = "#01469a"
     }
 

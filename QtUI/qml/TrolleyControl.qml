@@ -19,8 +19,6 @@ ApplicationWindow {
     title: "移动小车与云台控制"
 
     Component.onCompleted: {
-        FluApp.init(root)
-        root.show(); root.raise(); root.requestActivate()
         FluTheme.primaryColor = "#01469a"
     }
 

@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import FluentUI 1.0
 
 ApplicationWindow {
     id: appRoot
@@ -7,7 +8,27 @@ ApplicationWindow {
     width: 1920
     height: 1080
     title: "吊装作业三维动态安全管控平台"
-    color: "#f4f7fc" 
+    color: "#f4f7fc"
+
+    // ─── 子窗口引用（点击按钮时打开/激活） ───
+    property Window winMonitor: null
+    property Window winTrolley: null
+    property Window winTrajPred: null
+
+    function openWindow(name) {
+        var win = appRoot["win" + name]
+        if (win) {
+            win.show()
+            win.raise()
+            win.requestActivate()
+            return
+        }
+        var comp = appRoot["comp" + name]
+        if (comp && comp.status === Component.Ready) {
+            win = comp.createObject()
+            appRoot["win" + name] = win
+        }
+    }
 
     // ═══ 严谨的色值 ═══
     readonly property color clrThemeNavy: "#01469a"    // 标题栏深蓝色
@@ -40,6 +61,31 @@ ApplicationWindow {
             color: "#0f172a"
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top; anchors.topMargin: 6
+        }
+
+        // 工具栏按钮（打开独立操作窗口）
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top; anchors.topMargin: 34
+            spacing: 8
+            Button {
+                text: "📊  系统监控"
+                font.pixelSize: 11
+                implicitHeight: 22
+                onClicked: openWindow("Monitor")
+            }
+            Button {
+                text: "🚗  小车控制"
+                font.pixelSize: 11
+                implicitHeight: 22
+                onClicked: openWindow("Trolley")
+            }
+            Button {
+                text: "🎯  轨迹预测"
+                font.pixelSize: 11
+                implicitHeight: 22
+                onClicked: openWindow("TrajPred")
+            }
         }
 
         // 状态文字排成一行
@@ -354,6 +400,8 @@ ApplicationWindow {
 
     // ═══ 启动时自动连接 Unity ROS 桥和相机流 ═══
     Component.onCompleted: {
+        FluApp.init(appRoot)
+        FluTheme.primaryColor = "#01469a"
         rosBridge.connectToUnity(9000)
         camStream.connectToCamera("192.168.164.128", 9001)
     }
@@ -439,5 +487,21 @@ ApplicationWindow {
                 }
             }
         }
+    }
+
+    // =========================================================================
+    // 6. 子窗口组件（延迟创建，点击工具栏按钮时实例化）
+    // =========================================================================
+    Component {
+        id: compMonitor
+        SystemMonitor {}
+    }
+    Component {
+        id: compTrolley
+        TrolleyControl {}
+    }
+    Component {
+        id: compTrajPred
+        TrajectoryPrediction {}
     }
 }
