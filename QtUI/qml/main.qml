@@ -63,27 +63,27 @@ ApplicationWindow {
             anchors.top: parent.top; anchors.topMargin: 6
         }
 
-        // 工具栏按钮（打开独立操作窗口）
+        // 子窗口切换按钮（固定放在最左侧）
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top; anchors.topMargin: 34
-            spacing: 8
+            anchors.bottom: parent.bottom; anchors.bottomMargin: 6
+            anchors.left: parent.left; anchors.leftMargin: 20
+            spacing: 6
             Button {
-                text: "📊  系统监控"
-                font.pixelSize: 11
-                implicitHeight: 22
+                text: "系统监控"
+                font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
+                highlighted: true
                 onClicked: openWindow("Monitor")
             }
             Button {
-                text: "🚗  小车控制"
-                font.pixelSize: 11
-                implicitHeight: 22
+                text: "小车控制"
+                font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
+                highlighted: true
                 onClicked: openWindow("Trolley")
             }
             Button {
-                text: "🎯  轨迹预测"
-                font.pixelSize: 11
-                implicitHeight: 22
+                text: "轨迹预测"
+                font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
+                highlighted: true
                 onClicked: openWindow("TrajPred")
             }
         }
@@ -92,7 +92,7 @@ ApplicationWindow {
         Row {
             anchors.bottom: parent.bottom; anchors.bottomMargin: 8
             anchors.left: parent.left; anchors.right: parent.right
-            anchors.leftMargin: 20; anchors.rightMargin: 20
+            anchors.leftMargin: 260; anchors.rightMargin: 20
             spacing: 30
 
             Text { text: "时间：2024-06-18 10:30:45"; font.pixelSize: 11; color: clrTxtSub }
@@ -400,6 +400,7 @@ ApplicationWindow {
 
     // ═══ 启动时自动连接 Unity ROS 桥和相机流 ═══
     Component.onCompleted: {
+        console.log("[main] version=2.0 with toolbar buttons")
         FluApp.init(appRoot)
         FluTheme.primaryColor = "#01469a"
         rosBridge.connectToUnity(9000)
