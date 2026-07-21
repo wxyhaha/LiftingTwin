@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDebug>
@@ -214,7 +214,10 @@ private:
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    // FluentUI 要求 Qt Quick Controls 使用 Basic 风格作为底（覆盖默认 Windows 风格）
+    qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
+
+    QApplication app(argc, argv);
 
     app.setApplicationName("LiftingTwin");
     app.setOrganizationName("LiftingTwin Team");
@@ -237,12 +240,24 @@ int main(int argc, char *argv[])
     camImageProvider->setSource(&camStream);
     engine.addImageProvider("camerafeed", camImageProvider);
 
+    // 支持命令行参数 --ui <QML文件名> 预览新界面（如 --ui SystemMonitor）
+    QString qmlTarget = "main";
+    for (int i = 1; i < argc - 1; ++i) {
+        if (QString(argv[i]) == "--ui" && i + 1 < argc) {
+            qmlTarget = argv[++i];
+            break;
+        }
+    }
+
     // 通过 CMake 资源系统或文件系统加载 QML
-    const QString localQml = QCoreApplication::applicationDirPath() + "/LiftingTwin/qml/main.qml";
+    const QString localQml = QCoreApplication::applicationDirPath()
+                             + "/LiftingTwin/qml/" + qmlTarget + ".qml";
     if (QFileInfo::exists(localQml)) {
+        qInfo() << "[App] Loading QML from file:" << localQml;
         engine.load(QUrl::fromLocalFile(localQml));
     } else {
-        engine.loadFromModule("LiftingTwin", "main");
+        qInfo() << "[App] Loading QML from module LiftingTwin:" << qmlTarget;
+        engine.loadFromModule("LiftingTwin", qmlTarget);
     }
 
     QObject::connect(&engine, &QQmlApplicationEngine::warnings,

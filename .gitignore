@@ -100,3 +100,5 @@ cmake_install.cmake
 Makefile
 compile_commands.json
 .qmldir
+QtUI/build5/
+QtUI/third_party/FluentUI/
