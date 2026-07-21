@@ -50,6 +50,10 @@ if exist "%QT_DIR%\qml\FluentUI\Release\fluentuiplugin.dll" (
     copy /Y "%QT_DIR%\qml\FluentUI\Release\fluentuiplugin.dll" "%CD%\%BUILD_DIR%\Release\qml\FluentUI\fluentuiplugin.dll" > nul 2>&1
 )
 
+REM 生成 qt.conf（双击运行时 QML 引擎通过它找到 FluentUI 模块）
+echo [Paths]> "%CD%\%BUILD_DIR%\Release\qt.conf"
+echo Qml2Imports=./qml>> "%CD%\%BUILD_DIR%\Release\qt.conf"
+
 echo [5/5] 完成！
 echo.
 echo 启动界面：
