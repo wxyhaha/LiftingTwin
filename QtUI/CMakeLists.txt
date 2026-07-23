@@ -23,8 +23,6 @@ qt_add_executable(appLiftingTwinUI
     CameraStreamClient.cpp
     CameraImageProvider.h
     CameraImageProvider.cpp
-    RosBridgeSubscriber.h
-    RosBridgeSubscriber.cpp
 )
 
 qt_add_qml_module(appLiftingTwinUI

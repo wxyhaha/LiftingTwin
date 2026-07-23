@@ -12,7 +12,6 @@
 #include "QtRosBridge.h"
 #include "CameraStreamClient.h"
 #include "CameraImageProvider.h"
-#include "RosBridgeSubscriber.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -233,20 +232,12 @@ int main(int argc, char *argv[])
     QtRosBridge rosBridge;
     engine.rootContext()->setContextProperty("rosBridge", &rosBridge);
 
-    // 注册 RosBridgeSubscriber (ROS2 rosbridge WebSocket 订阅) 到 QML
-    RosBridgeSubscriber rosBridgeSub;
-    engine.rootContext()->setContextProperty("rosBridgeSub", &rosBridgeSub);
-
-    // 注册 CameraStreamClient (相机 TCP 流接收) 到 QML
+    // 注册 CameraStreamClient (相机 TCP JPEG 流接收) 到 QML
     CameraStreamClient camStream;
     engine.rootContext()->setContextProperty("camStream", &camStream);
     // 注册 QQuickImageProvider 供 QML 显示相机帧 (image://camerafeed/)
     CameraImageProvider *camImageProvider = new CameraImageProvider();
     camImageProvider->setSource(&camStream);
-    // rosBridgeSub 作为备选帧源（ROS2 话题优先于 TCP 流）
-    camImageProvider->setAltSource([&rosBridgeSub]() -> QImage {
-        return rosBridgeSub.currentFrame();
-    });
     engine.addImageProvider("camerafeed", camImageProvider);
 
     // 支持命令行参数 --ui <QML文件名> 预览新界面（如 --ui SystemMonitor）
