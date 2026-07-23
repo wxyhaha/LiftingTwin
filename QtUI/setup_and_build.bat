@@ -38,6 +38,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM 复制 LiftingTwin QML 模块到输出目录（cmake qt_add_qml_module 只编译到资源，不自动复制模块文件）
+if exist "%CD%\%BUILD_DIR%\LiftingTwin" (
+    xcopy /E /Y "%CD%\%BUILD_DIR%\LiftingTwin" "%CD%\%BUILD_DIR%\Release\LiftingTwin\" >nul 2>&1
+    echo   LiftingTwin QML 模块已复制
+)
+
 echo [4/5] 部署 Qt DLL...
 set PATH=%QT_DIR%\bin;%PATH%
 windeployqt --qmldir "%~dp0qml" "%CD%\%BUILD_DIR%\Release\appLiftingTwinUI.exe" 2>&1
@@ -50,8 +56,9 @@ if exist "%QT_DIR%\qml\FluentUI\Release\fluentuiplugin.dll" (
     copy /Y "%QT_DIR%\qml\FluentUI\Release\fluentuiplugin.dll" "%CD%\%BUILD_DIR%\Release\qml\FluentUI\fluentuiplugin.dll" > nul 2>&1
 )
 
-REM 生成 qt.conf（双击运行时 QML 引擎通过它找到 FluentUI 模块）
+REM 生成 qt.conf（双击运行时 QML 引擎通过它找到 FluentUI 和 LiftingTwin 模块）
 echo [Paths]> "%CD%\%BUILD_DIR%\Release\qt.conf"
+echo Qml2Imports=.>> "%CD%\%BUILD_DIR%\Release\qt.conf"
 echo Qml2Imports=./qml>> "%CD%\%BUILD_DIR%\Release\qt.conf"
 
 echo [5/5] 完成！

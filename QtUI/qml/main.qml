@@ -10,23 +10,52 @@ ApplicationWindow {
     title: "吊装作业三维动态安全管控平台"
     color: "#f4f7fc"
 
-    // ─── 子窗口引用（点击按钮时打开/激活） ───
-    property Window winMonitor: null
-    property Window winTrolley: null
-    property Window winTrajPred: null
+    // ─── 子窗口引用 ───
+    property var winMonitor: null
+    property var winTrolley: null
+    property var winTrajPred: null
 
-    function openWindow(name) {
-        var win = appRoot["win" + name]
-        if (win) {
-            win.show()
-            win.raise()
-            win.requestActivate()
+    function openMonitor() {
+        if (winMonitor) {
+            try { winMonitor.show(); winMonitor.raise(); winMonitor.requestActivate() } catch(e) {}
             return
         }
-        var comp = appRoot["comp" + name]
-        if (comp && comp.status === Component.Ready) {
-            win = comp.createObject()
-            appRoot["win" + name] = win
+        // 直接用 Qt.createComponent + 显式 URL 创建，完全绕过类型系统
+        var comp = Qt.createComponent("SystemMonitor.qml")
+        if (comp.status === Component.Ready) {
+            winMonitor = comp.createObject()
+        } else if (comp.status === Component.Error) {
+            console.log("SystemMonitor ERROR:", comp.errorString())
+        } else {
+            console.log("SystemMonitor status:", comp.status)
+        }
+    }
+    function openTrolley() {
+        if (winTrolley) {
+            try { winTrolley.show(); winTrolley.raise(); winTrolley.requestActivate() } catch(e) {}
+            return
+        }
+        var comp = Qt.createComponent("TrolleyControl.qml")
+        if (comp.status === Component.Ready) {
+            winTrolley = comp.createObject()
+        } else if (comp.status === Component.Error) {
+            console.log("TrolleyControl ERROR:", comp.errorString())
+        } else {
+            console.log("TrolleyControl status:", comp.status)
+        }
+    }
+    function openTrajPred() {
+        if (winTrajPred) {
+            try { winTrajPred.show(); winTrajPred.raise(); winTrajPred.requestActivate() } catch(e) {}
+            return
+        }
+        var comp = Qt.createComponent("TrajectoryPrediction.qml")
+        if (comp.status === Component.Ready) {
+            winTrajPred = comp.createObject()
+        } else if (comp.status === Component.Error) {
+            console.log("TrajectoryPrediction ERROR:", comp.errorString())
+        } else {
+            console.log("TrajectoryPrediction status:", comp.status)
         }
     }
 
@@ -72,19 +101,19 @@ ApplicationWindow {
                 text: "系统监控"
                 font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
                 highlighted: true
-                onClicked: openWindow("Monitor")
+                onClicked: openMonitor()
             }
             Button {
                 text: "小车控制"
                 font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
                 highlighted: true
-                onClicked: openWindow("Trolley")
+                onClicked: openTrolley()
             }
             Button {
                 text: "轨迹预测"
                 font.pixelSize: 11; implicitWidth: 80; implicitHeight: 22
                 highlighted: true
-                onClicked: openWindow("TrajPred")
+                onClicked: openTrajPred()
             }
         }
 
@@ -491,18 +520,6 @@ ApplicationWindow {
     }
 
     // =========================================================================
-    // 6. 子窗口组件（延迟创建，点击工具栏按钮时实例化）
+    // 6. 子窗口通过 Qt.createComponent() 在按钮 onClicked 中按需创建
     // =========================================================================
-    Component {
-        id: compMonitor
-        SystemMonitor {}
-    }
-    Component {
-        id: compTrolley
-        TrolleyControl {}
-    }
-    Component {
-        id: compTrajPred
-        TrajectoryPrediction {}
-    }
 }
