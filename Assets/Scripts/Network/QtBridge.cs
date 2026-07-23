@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
-#if LIFTINGTWIN_HAS_ROS
+#if ROS2
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Std;
 #endif
@@ -163,7 +163,7 @@ namespace LiftingTwin.Network
                 var cmd = JsonUtility.FromJson<QtCommand>(json);
                 if (cmd == null) return;
 
-#if LIFTINGTWIN_HAS_ROS
+#if ROS2
                 var ros = ROSConnection.GetOrCreateInstance();
 
                 switch (cmd.cmd)

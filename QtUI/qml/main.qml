@@ -293,7 +293,9 @@ ApplicationWindow {
                     onTriggered: camImage1.source = "image://camerafeed/live?" + Math.random()
                 }
 
-                // 海康工业相机 — 全宽显示
+                property bool camActive: camStream.connected || rosBridgeSub.connected
+
+                // 相机画面 — 全宽显示
                 Rectangle {
                     id: camSlot1
                     width: parent.width
@@ -307,14 +309,14 @@ ApplicationWindow {
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectFit
                         cache: false
-                        visible: camStream.connected
+                        visible: camStream.connected || rosBridgeSub.connected
                     }
 
                     // 未连接时占位
                     Rectangle {
                         anchors.fill: parent
                         color: "#801e293b"
-                        visible: !camStream.connected
+                        visible: !camStream.connected && !rosBridgeSub.connected
                         Text {
                             text: "等待相机连接..."
                             font.pixelSize: 12
@@ -328,10 +330,20 @@ ApplicationWindow {
                         anchors.bottom: parent.bottom
                         anchors.left: parent.left
                         anchors.margins: 6
-                        text: camStream.connected ? (camStream.cameraName + " ●") : ""
+                        text: camStream.connected ? (camStream.cameraName + " TCP●") : rosBridgeSub.connected ? "ROS2 ●" : ""
                         font.pixelSize: 10
                         color: "#10b981"
-                        visible: camStream.connected
+                        visible: camStream.connected || rosBridgeSub.connected
+                    }
+
+                    // ROS2 连接状态提示（调试用）
+                    Text {
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        anchors.margins: 6
+                        text: rosBridgeSub.connected ? "rosbridge OK" : "rosbridge ..."
+                        font.pixelSize: 9
+                        color: rosBridgeSub.connected ? "#10b981" : "#ef4444"
                     }
                 }
 
@@ -433,7 +445,8 @@ ApplicationWindow {
         FluApp.init(appRoot)
         FluTheme.primaryColor = "#01469a"
         rosBridge.connectToUnity(9000)
-        camStream.connectToCamera("192.168.164.128", 9001)
+        rosBridgeSub.connectToRosBridge("10.36.37.93", 9090, "/left_camera/image/image")
+        camStream.connectToCamera("10.36.37.93", 9001)
     }
 
     Connections {

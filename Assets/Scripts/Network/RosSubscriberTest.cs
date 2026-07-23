@@ -1,4 +1,4 @@
-#if LIFTINGTWIN_HAS_ROS
+#if ROS2
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Std;

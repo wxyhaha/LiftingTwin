@@ -79,6 +79,29 @@ void CameraStreamClient::onReadyRead()
 {
     m_recvBuf.append(m_socket->readAll());
 
+    // 缓冲区积压时（>200KB≈多帧旧数据），丢弃旧的，只保留最新完整帧
+    if (m_recvBuf.size() > 200 * 1024) {
+        int tail = m_recvBuf.size();
+        int lastStart = -1;
+        int pos = 0;
+        while (pos + 4 <= tail) {
+            const auto *d = reinterpret_cast<const quint8*>(m_recvBuf.constData() + pos);
+            quint32 flen = (static_cast<quint32>(d[0]) << 24)
+                         | (static_cast<quint32>(d[1]) << 16)
+                         | (static_cast<quint32>(d[2]) << 8)
+                         | static_cast<quint32>(d[3]);
+            if (pos + 4 + static_cast<int>(flen) > tail) break;
+            lastStart = pos;
+            pos += 4 + static_cast<int>(flen);
+        }
+        if (lastStart > 0) {
+            m_recvBuf.remove(0, lastStart);
+            m_state = ReadingHeader;
+            m_expectedLength = 0;
+            qInfo() << "[CameraStream] Skip" << lastStart << "bytes, buffer:" << m_recvBuf.size();
+        }
+    }
+
     while (true) {
         if (m_state == ReadingHeader) {
             if (m_recvBuf.size() < 4) break;
