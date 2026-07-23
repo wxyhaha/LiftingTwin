@@ -16,8 +16,8 @@ namespace LiftingTwin.PointCloud
     public class PointCloudView : MonoBehaviour
     {
         [Header("Rendering")]
-        [Tooltip("点大小（世界单位）")]
-        public float pointSize = 0.5f;
+        [Tooltip("点大小（世界单位），PointCloudSubscriber 会自动覆盖此值")]
+        public float pointSize = 0.03f;
 
         [Tooltip("使用 PointCloud.shader 的材质")]
         public Material pointMaterial;

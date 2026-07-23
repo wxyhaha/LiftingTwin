@@ -1,215 +1,23 @@
-﻿// -----------------------------------------------------------------------
-// LiftingTwin - 场景初始化器
+// -----------------------------------------------------------------------
+// LiftingTwin - 场景初始化器（精简版）
 //
 // 用途：
-//   在 Play Mode 启动时自动创建地面和参考物体，
-//   方便调试和验证相机控制功能。
-//   挂载到 Bootstrap GameObject 上。
-//
-// 设计原则：
-//   仅在开发和调试阶段使用，后续可以移除或禁用。
+//   仅初始化点云渲染所需的基础环境，不创建任何辅助物体。
 // -----------------------------------------------------------------------
 
-using LiftingTwin.Mesh;
-using LiftingTwin.PointCloud;
-using LiftingTwin.UI;
 using LiftingTwin.Utils;
 using UnityEngine;
 
 namespace LiftingTwin.Runtime
 {
     /// <summary>
-    /// 场景初始化器。在 Start 时创建地面平面和参考物体，
-    /// 为相机控制提供视觉参照。
+    /// 场景初始化器。仅初始化基础环境。
     /// </summary>
     public class SceneInitializer : MonoBehaviour
     {
-        [Header("Ground")]
-        [Tooltip("地面大小")]
-        public Vector2 groundSize = new Vector2(20, 20);
-
-        [Tooltip("地面材质，可选。不指定则使用默认 URP 材质")]
-        public Material groundMaterial;
-
-        [Header("Reference Objects")]
-        [Tooltip("是否在原点创建参考立方体")]
-        public bool createReferenceCube = true;
-
-        [Tooltip("参考立方体材质，可选")]
-        public Material cubeMaterial;
-
-        [Header("Grid")]
-        [Tooltip("是否绘制辅助网格线")]
-        public bool showGrid = true;
-
-        [Tooltip("网格大小")]
-        public int gridSize = 10;
-
-        [Tooltip("网格间距")]
-        public float gridSpacing = 1.0f;
-
-        private Material _groundMat;
-        private Material _grayMat;
-        private Material _orangeMat;
-
         private void Start()
         {
-            _groundMat = Resources.Load<Material>("Mat_Ground");
-            _grayMat = Resources.Load<Material>("Mat_Gray");
-            _orangeMat = Resources.Load<Material>("Mat_Orange");
-            if (_groundMat == null) _groundMat = CreateFallback(new Color(0.18f, 0.65f, 0.35f));
-            if (_grayMat == null) _grayMat = CreateFallback(Color.gray * 0.7f);
-            if (_orangeMat == null) _orangeMat = CreateFallback(new Color(1f, 0.6f, 0f));
-
-            CreateGround();
-            if (createReferenceCube)
-                CreateReferenceCube();
-
-            if (showGrid)
-                CreateGridHelper();
-
-            // 开发阶段：创建测试对象
-            CreateTestObjects();
-
-            // 挂载 UI 管理器 + 物体选中系统
-            gameObject.AddComponent<UIManager>();
-            gameObject.AddComponent<SelectionManager>();
-
-            Log.Info("Runtime", "SceneInitializer: 场景初始化完成");
-        }
-
-        private void CreateGround()
-        {
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.SetParent(null);
-            ground.transform.localScale = new Vector3(groundSize.x / 10f, 1, groundSize.y / 10f);
-
-            var renderer = ground.GetComponent<MeshRenderer>();
-            renderer.material = groundMaterial != null ? groundMaterial : _groundMat;
-
-            Log.Debug("Runtime", "SceneInitializer: 创建地面 {0}x{1}", groundSize.x, groundSize.y);
-        }
-
-        private void CreateReferenceCube()
-        {
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = "Reference Cube";
-            cube.transform.SetParent(null);
-            cube.transform.position = new Vector3(0, 0.5f, 0);
-
-            if (cubeMaterial != null)
-            {
-                var renderer = cube.GetComponent<MeshRenderer>();
-                renderer.material = cubeMaterial;
-            }
-
-            // 在四角加小柱子增强空间感
-            CreateCornerPillar(new Vector3(-3, 0.25f, -3));
-            CreateCornerPillar(new Vector3(3, 0.25f, -3));
-            CreateCornerPillar(new Vector3(-3, 0.25f, 3));
-            CreateCornerPillar(new Vector3(3, 0.25f, 3));
-
-            Log.Debug("Runtime", "SceneInitializer: 创建参考立方体 + 四角标记");
-        }
-
-        private void CreateCornerPillar(Vector3 position)
-        {
-            var pillar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            pillar.name = "Corner Marker";
-            pillar.transform.SetParent(null);
-            pillar.transform.position = position;
-            pillar.transform.localScale = new Vector3(0.2f, 0.25f, 0.2f);
-
-            var renderer = pillar.GetComponent<MeshRenderer>();
-            renderer.material = _grayMat;
-        }
-
-        private void CreateGridHelper()
-        {
-            var gridGo = new GameObject("Grid Helper");
-            gridGo.transform.SetParent(null);
-            var grid = gridGo.AddComponent<GridDebug>();
-            grid.gridSize = gridSize;
-            grid.gridSpacing = gridSpacing;
-        }
-
-        private static Material CreateFallback(Color color)
-        {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-            var mat = new Material(shader);
-            mat.color = color;
-            return mat;
-        }
-
-        /// <summary>
-        /// 开发阶段：创建 Mesh 和点云测试对象，演示各系统功能。
-        /// </summary>
-        private void CreateTestObjects()
-        {
-            // 创建 MeshManager（也可拖拽 MeshManagerView 到 Bootstrap 上）
-            var mgrObj = new GameObject("Mesh Manager");
-            mgrObj.transform.SetParent(transform);
-            var meshView = mgrObj.AddComponent<MeshManagerView>();
-
-            // 1. 输电塔（风致摇摆）
-            var towerFrame = ProceduralTower.Generate();
-            int towerId = meshView.AddObject("输电塔 (测试)", towerFrame, addCollider: true);
-            meshView.SetPosition(towerId, new Vector3(3, 0, 3));
-
-            // 2. 移动式起重机（底盘 + 吊臂 + 吊钩）
-            int craneBaseX = -4, craneBaseZ = -3;
-            var chassisFrame = ProceduralCrane.GenerateChassis();
-            int craneChassisId = meshView.AddObject("起重机-底盘", chassisFrame, addCollider: true);
-            meshView.SetPosition(craneChassisId, new Vector3(craneBaseX, 0, craneBaseZ));
-
-            int craneBoomId = meshView.AddObject("起重机-吊臂", ProceduralCrane.GenerateBoom(), addCollider: true);
-            meshView.SetPosition(craneBoomId, new Vector3(craneBaseX, 0, craneBaseZ));
-
-            int craneHookId = meshView.AddObject("起重机-吊钩", ProceduralCrane.GenerateHook(Vector3.zero), addCollider: true);
-            meshView.SetPosition(craneHookId, new Vector3(craneBaseX, 0, craneBaseZ));
-
-            // 驱动动画
-            gameObject.AddComponent<MeshTestAnimator>()
-                .AddTower(meshView, towerId, towerFrame)
-                .AddCrane(meshView, craneChassisId, craneBoomId, craneHookId);
-
-            Log.Info("Runtime", "SceneInitializer: 创建测试场景（输电塔 + 起重机）");
-        }
-
-        /// <summary>
-        /// 内部辅助类：在 Scene 视图中绘制网格线（Gizmos）。
-        /// 仅在 Editor 中可见，Build 后不显示。
-        /// </summary>
-        private class GridDebug : MonoBehaviour
-        {
-            public int gridSize = 10;
-            public float gridSpacing = 1.0f;
-
-            private void OnDrawGizmos()
-            {
-                Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.3f);
-                var half = gridSize * gridSpacing * 0.5f;
-
-                for (int i = -gridSize / 2; i <= gridSize / 2; i++)
-                {
-                    var pos = i * gridSpacing;
-                    Gizmos.DrawLine(
-                        new Vector3(pos, 0, -half),
-                        new Vector3(pos, 0, half)
-                    );
-                    Gizmos.DrawLine(
-                        new Vector3(-half, 0, pos),
-                        new Vector3(half, 0, pos)
-                    );
-                }
-
-                // 坐标轴（X红色，Z蓝色）
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(Vector3.zero, new Vector3(2, 0, 0));
-                Gizmos.color = Color.blue;
-                Gizmos.DrawLine(Vector3.zero, new Vector3(0, 0, 2));
-            }
+            Log.Info("Runtime", "SceneInitializer: 场景已就绪（仅点云渲染模式）");
         }
     }
 }

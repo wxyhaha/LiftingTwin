@@ -2,7 +2,9 @@
     "name": "LiftingTwin",
     "rootNamespace": "LiftingTwin",
     "references": [
-        "Unity.Robotics.ROSTCPConnector"
+        "Unity.Robotics.ROSTCPConnector",
+        "Unity.Robotics.ROSTCPConnector.Messages",
+        "Unity.Robotics.ROSTCPConnector.MessageGeneration"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

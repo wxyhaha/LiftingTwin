@@ -115,6 +115,20 @@ namespace LiftingTwin.PointCloud
                 System.Array.Resize(ref colors, idx);
             }
 
+            // 自适应点大小：根据点云空间范围估算平均点间距
+            if (idx > 0)
+            {
+                Vector3 min = positions[0], max = positions[0];
+                for (int i = 1; i < idx; i++)
+                {
+                    min = Vector3.Min(min, positions[i]);
+                    max = Vector3.Max(max, positions[i]);
+                }
+                float extent = (max - min).magnitude;
+                float spacing = extent / Mathf.Sqrt(idx);
+                _view.pointSize = Mathf.Clamp(spacing * 0.5f, 0.001f, 0.1f);
+            }
+
             _view.ApplyFrame(new PointCloudFrame
             {
                 Positions = positions,
